@@ -20,7 +20,7 @@ export function iniciarVerificacaoPacotesExpirados() {
       // 1️⃣ Buscar históricos ativos com validade vencida
       const historicosExpirados = await prisma.historicoRecargas.findMany({
         where: {
-          isExpired: false,
+          isExpired:true,
           expires_at: { lte: agora },
         },
         include: {
@@ -28,6 +28,8 @@ export function iniciarVerificacaoPacotesExpirados() {
           pacote: true,
         },
       });
+
+      console.log(historicosExpirados)
 
       if (historicosExpirados.length === 0) {
         console.log("✅ Nenhum pacote expirado encontrado.");

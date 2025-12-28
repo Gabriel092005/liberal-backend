@@ -1,81 +1,71 @@
 generator client {
-  provider = "prisma-client-js"
+provider = "prisma-client-js"
 }
+
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-
 model Usuario {
-  id                Int            @id @default(autoincrement())
-  nome              String
-  celular           String
-  nif               String
-  description       String         @default("Lorem ipsum dolor, sit amet consectetur adipisicing elit. Atque, eius, optio deleniti laudantium nesciunt a, repudiandae modi deserunt minus nihil ad laboriosam sit cumque iusto qui in dolore et dicta.")
-  palavraPasse      String
-  estrelas          Float?
-  profissao         String
-  link              String?
-  estado_conta      ACCOUNT_STATUS @default(ACTIVA)
-  created_at        DateTime       @default(now())
-  role              Role           @default(CLIENTE_INDIVIDUAL)
-  image_path        String?
-  provincia         String
-  municipio         String
-  nomeRepresentante String?
-  postsvitrineId    Int?
-
-  // Relações existentes
-  avaliacoesFeitas    Avaliacao[]   @relation("ClienteAvaliacoes")
-  avaliacoesRecebidas Avaliacao[]   @relation("PrestadorAvaliacoes")
-  transacoes          Transacao[]
+  id                  Int            @id @default(autoincrement())
+  nome                String
+  celular             String
+  nif                 String
+  description         String         @default("Lorem ipsum dolor, sit amet consectetur adipisicing elit. Atque, eius, optio deleniti laudantium nesciunt a, repudiandae modi deserunt minus nihil ad laboriosam sit cumque iusto qui in dolore et dicta.")
+  palavraPasse        String
+  estrelas            Float?
+  profissao           String
+  link                String?
+  estado_conta        ACCOUNT_STATUS @default(ACTIVA)
+  created_at          DateTime       @default(now())
+  role                Role           @default(CLIENTE_INDIVIDUAL)
+  image_path          String?
+  provincia           String
+  municipio           String
+  nomeRepresentante   String?
+  postsvitrineId      Int?
+  Commentario         Commentario[]
+  avaliacoesFeitas    Avaliacao[]    @relation("ClienteAvaliacoes")
+  avaliacoesRecebidas Avaliacao[]    @relation("PrestadorAvaliacoes")
   carteira            Carteira?
+  favoritosFeitos     Favoritos[]    @relation("ClienteFavoritos")
+  favoritosRecebidos  Favoritos[]    @relation("PrestadorFavoritos")
+  interesses          Interesse[]    @relation("InteressePrestador")
   notificacoes        Notificacao[]
   pedidos             Pedido[]
-  interesses          Interesse[]   @relation("InteressePrestador")
-
-  // 🔹 Relações de favoritos
-  favoritosFeitos    Favoritos[]    @relation("ClienteFavoritos")
-  favoritosRecebidos Favoritos[]    @relation("PrestadorFavoritos")
-  Postsvitrine       Postsvitrine[]
-  Commentario        Commentario[]
+  Postsvitrine        Postsvitrine[]
+  transacoes          Transacao[]
 
   @@map("usuario")
 }
 
 model Favoritos {
-  id         Int      @id @default(autoincrement())
-  created_at DateTime @default(now())
-
-  // 🔹 Cliente (quem favoritou)
-  clienteId Int
-  cliente   Usuario @relation("ClienteFavoritos", fields: [clienteId], references: [id])
-
-  // 🔹 Prestador (quem foi favoritado)
+  id          Int      @id @default(autoincrement())
+  created_at  DateTime @default(now())
+  clienteId   Int
   prestadorId Int
-  prestador   Usuario @relation("PrestadorFavoritos", fields: [prestadorId], references: [id])
+  cliente     Usuario  @relation("ClienteFavoritos", fields: [clienteId], references: [id])
+  prestador   Usuario  @relation("PrestadorFavoritos", fields: [prestadorId], references: [id])
 
   @@map("favoritos")
 }
 
 model Pedido {
-  id         Int       @id @default(autoincrement())
-  title      String
-  content    String
-  image_path String?
-  brevidade  Brevidade @default(URGENTE)
-  accepted   Boolean   @default(true)
-  status     STATUS    @default(PENDING)
-  location   String
-  latitude   Float
-  longitude  Float
-  created_at DateTime  @default(now())
-  usuarioId  Int
-
-  // Relações
-  autor        Usuario     @relation(fields: [usuarioId], references: [id])
+  id           Int         @id @default(autoincrement())
+  title        String
+  content      String
+  image_path   String?
+  brevidade    Brevidade   @default(URGENTE)
+  accepted     Boolean     @default(true)
+  status       STATUS      @default(PENDING)
+  location     String
+  latitude     Float
+  longitude    Float
+  created_at   DateTime    @default(now())
+  usuarioId    Int
   interessados Interesse[] @relation("PedidoInteresses")
+  autor        Usuario     @relation(fields: [usuarioId], references: [id])
 
   @@map("pedidos")
 }
@@ -85,8 +75,8 @@ model Interesse {
   prestadorId Int
   pedidoId    Int
   status      STATUS_INTERESTED @default(PENDING)
-  prestador   Usuario           @relation("InteressePrestador", fields: [prestadorId], references: [id])
   pedido      Pedido            @relation("PedidoInteresses", fields: [pedidoId], references: [id])
+  prestador   Usuario           @relation("InteressePrestador", fields: [prestadorId], references: [id])
 
   @@map("interesse")
 }
@@ -98,9 +88,8 @@ model Avaliacao {
   created_at  DateTime @default(now())
   clienteId   Int
   prestadorId Int
-
-  cliente   Usuario @relation("ClienteAvaliacoes", fields: [clienteId], references: [id])
-  prestador Usuario @relation("PrestadorAvaliacoes", fields: [prestadorId], references: [id])
+  cliente     Usuario  @relation("ClienteAvaliacoes", fields: [clienteId], references: [id])
+  prestador   Usuario  @relation("PrestadorAvaliacoes", fields: [prestadorId], references: [id])
 
   @@map("avaliacao")
 }
@@ -108,27 +97,25 @@ model Avaliacao {
 model Commentario {
   id         Int     @id @default(autoincrement())
   comentario String
-  prestador  Usuario @relation(fields: [usuarioId], references: [id])
   usuarioId  Int
+  prestador  Usuario @relation(fields: [usuarioId], references: [id])
 }
 
 model Carteira {
-  id         Int      @id @default(autoincrement())
-  receita    Decimal  @default(0)
-  created_at DateTime @default(now())
+  id         Int                 @id @default(autoincrement())
+  receita    Decimal             @default(0)
+  created_at DateTime            @default(now())
   validade   String?
-  usuarioId  Int      @unique
-
-  // Relações
+  usuarioId  Int                 @unique
   usuario    Usuario             @relation(fields: [usuarioId], references: [id])
-  transacoes Transacao[]
   historico  HistoricoRecargas[]
+  transacoes Transacao[]
 
   @@map("carteira")
 }
 
 model Transacao {
-  id            Int      @id @default(autoincrement())
+  id            Int                 @id @default(autoincrement())
   usuarioId     Int
   pacoteId      Int?
   carteiraId    Int
@@ -136,13 +123,12 @@ model Transacao {
   metodo        String
   status        String
   referencia    String?
-  created_at    DateTime @default(now())
-  atualizado_em DateTime @updatedAt
-
-  usuario   Usuario             @relation(fields: [usuarioId], references: [id])
-  carteira  Carteira            @relation(fields: [carteiraId], references: [id])
-  pacote    Pacotes?            @relation(fields: [pacoteId], references: [id])
-  historico HistoricoRecargas[]
+  created_at    DateTime            @default(now())
+  atualizado_em DateTime            @updatedAt
+  historico     HistoricoRecargas[]
+  carteira      Carteira            @relation(fields: [carteiraId], references: [id])
+  pacote        Pacotes?            @relation(fields: [pacoteId], references: [id])
+  usuario       Usuario             @relation(fields: [usuarioId], references: [id])
 
   @@map("transacao")
 }
@@ -154,8 +140,8 @@ model HistoricoRecargas {
   pacoteId    Int
   carteiraId  Int
   transacaoId Int?
-  expires_at  DateTime? // ✅ data e hora em que a recarga expira
-  isExpired   Boolean    @default(false) // ✅ status de expiração
+  expires_at  DateTime?
+  isExpired   Boolean    @default(false)
   created_at  DateTime   @default(now())
   carteira    Carteira   @relation(fields: [carteiraId], references: [id])
   pacote      Pacotes    @relation(fields: [pacoteId], references: [id])
@@ -165,17 +151,16 @@ model HistoricoRecargas {
 }
 
 model Pacotes {
-  id         Int      @id @default(autoincrement())
+  id         Int                 @id @default(autoincrement())
   preco      Decimal
   title      String
   validade   String
   beneficio1 String?
   beneficio2 String?
   beneficio3 String?
-  created_at DateTime @default(now())
-
-  transacoes Transacao[]
+  created_at DateTime            @default(now())
   historico  HistoricoRecargas[]
+  transacoes Transacao[]
 
   @@map("pacotes")
 }
@@ -187,8 +172,7 @@ model Notificacao {
   AlreadySeen Boolean  @default(false)
   created_at  DateTime @default(now())
   authrId     Int
-
-  author Usuario @relation(fields: [authrId], references: [id])
+  author      Usuario  @relation(fields: [authrId], references: [id])
 
   @@map("notificacao")
 }
@@ -199,8 +183,8 @@ model Postsvitrine {
   description String?
   created_at  DateTime @default(now())
   image_path  String?
-  usuario     Usuario  @relation(fields: [usuarioId], references: [id])
   usuarioId   Int
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id])
 
   @@map("postsvitrine")
 }
@@ -214,8 +198,8 @@ model profissao {
   id         Int      @id @default(autoincrement())
   titulo     String
   created_at DateTime @default(now())
-  category   category @relation(fields: [categoryId], references: [id])
   categoryId Int
+  category   category @relation(fields: [categoryId], references: [id])
 }
 
 model category {

@@ -1,56 +1,51 @@
-import Fastify, { FastifyReply, FastifyRequest } from "fastify";
+import Fastify from "fastify";
 import { Server } from "socket.io";
-import { UsersRoutes } from "./http/controllers/users/routes";
-import { env } from "./Env";
-import cors  from'@fastify/cors'
+import cors from '@fastify/cors';
 import fastifyJwt from "@fastify/jwt";
 import fastifyCookie from "@fastify/cookie";
-import multipart from '@fastify/multipart'
-import path from 'path'
-import fastifyStatic from '@fastify/static'
-import multer from 'fastify-multer'
+import multipart from '@fastify/multipart';
+import fastifyStatic from '@fastify/static';
+import path from 'path';
+
+// Importação das Configurações e Rotas
+import { env } from "./Env";
+import { main as seedDefaults } from "./defaults";
+import { iniciarVerificacaoPacotesExpirados } from "./Jobs/verificar-pacotes-expirados";
+
+// Rotas
+import { UsersRoutes } from "./http/controllers/users/routes";
 import { OrderRoutes } from "./http/controllers/orders/routes";
-import { InteresseRoutes } from "./http/controllers/interessar/routes";
 import { AvaliacaoRoutes } from "./http/controllers/avaliacao/routes";
-import { CarteiraRoutes } from "./http/controllers/carteira/routes";
+import { FavoritosRoutes } from "./http/controllers/favoritos/routes";
+import { InteresseRoutes } from "./http/controllers/interessar/routes";
 import { packageRoutes } from "./http/controllers/packages/routes";
+import { CarteiraRoutes } from "./http/controllers/carteira/routes";
 import { MetricsRoutes } from "./http/controllers/metrics/routes";
 import { ProfissionRoutes } from "./http/controllers/profissao/routes";
 import { NotificacaoRoutes } from "./http/controllers/notification/routes";
-import { FavoritosRoutes } from "./http/controllers/favoritos/routes";
-import { iniciarVerificacaoPacotesExpirados } from "./Jobs/verificar-pacotes-expirados";
 import { VitrineRoutes } from "./http/controllers/vitrine/routes";
 import { categoryRoutes } from "./http/controllers/category/routes";
-import { prisma } from "./lib/prisma";
-import { main } from "./defaults";
 
+const app = Fastify({
+  logger: true, 
+});
 
+// 1. REGISTRE O MULTIPART PRIMEIRO (Para evitar o Erro 415)
+// REMOVI o multer.contentParser daqui.
+app.register(multipart, {
+  attachFieldsToBody: false, // Isso permite acessar campos de texto via request.body
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB
+  },
+});
 
-
-// ... (imports permanecem iguais)
-
-const app = Fastify();
-const server = app.server;
-// configuração de armazenamento
-
-
-
-
-// Configurações essenciais
-app.register(multer.contentParser)
-// app.register(multipart);
-// app.register(fastifyStatic, {
-//   root: path.join(__dirname, "./http/controllers/uploads"),
-//   prefix: "/uploads/",
-// });local
-
+// 2. ARQUIVOS ESTÁTICOS
+const uploadPath = path.join(process.cwd(), 'src', 'http', 'controllers', 'uploads');
 app.register(fastifyStatic, {
-  root: path.join(process.cwd(), 'src', 'http', 'controllers', 'uploads'),
+  root: uploadPath,
   prefix: '/uploads/',
 });
 
-console.log('Diretório com process.cwd():', path.join(process.cwd(), 'src', 'http', 'controllers', 'uploads'));
-  
 app.addHook('onRequest', (request, reply, done) => {
   if (request.url.startsWith('/uploads/')) {
     const decodedUrl = decodeURIComponent(request.url);
@@ -59,9 +54,8 @@ app.addHook('onRequest', (request, reply, done) => {
   done();
 });
 
-
-// Segurança e Autenticação
-  app.register(fastifyJwt, {
+// 3. SEGURANÇA E AUTH
+app.register(fastifyJwt, {
   secret: env.JWT_SECRET,
   cookie: { cookieName: 'refreshToken', signed: false },
   sign: { expiresIn: '10m' }
@@ -69,64 +63,40 @@ app.addHook('onRequest', (request, reply, done) => {
 
 app.register(fastifyCookie);
 
-// CORS Aprimorado
 app.register(cors, {
-  origin: [
-    // 'https://quintal.onrender.com',
-    'http://localhost:5173'
-  ],
+  origin: ['http://localhost:5173'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   credentials: true,
-  exposedHeaders: ['Authorization']
 });
 
-// Socket.IO
-export const io = new Server(server, {
+// 4. SOCKET.IO
+export const io = new Server(app.server, {
   cors: {
-    origin: [
-      // 'https://quintal.onrender.com',
-      'http://localhost:5173'
-    ],
-    methods: ['GET', 'POST'],
+    origin: ['http://localhost:5173'],
     credentials: true
   }
 });
 
-// Rotas
+// 5. REGISTRO DE ROTAS (Depois dos plugins/parsers)
 app.register(UsersRoutes);
 app.register(OrderRoutes);
 app.register(AvaliacaoRoutes);
-app.register(FavoritosRoutes)
-app.register(InteresseRoutes)
-app.register(packageRoutes),
-app.register(CarteiraRoutes),
-app.register(MetricsRoutes),
-app.register(ProfissionRoutes)
-app.register(NotificacaoRoutes)
-app.register(VitrineRoutes)
-app.register(categoryRoutes)
+app.register(FavoritosRoutes);
+app.register(InteresseRoutes);
+app.register(packageRoutes);
+app.register(CarteiraRoutes);
+app.register(MetricsRoutes);
+app.register(ProfissionRoutes);
+app.register(NotificacaoRoutes);
+app.register(VitrineRoutes);
+app.register(categoryRoutes);
 
-
-main()
-// Socket Events
-iniciarVerificacaoPacotesExpirados();
-io.on("connection", (socket) => {
-  console.log("Cliente conectado:", socket.id);
-
-  socket.on("register", (userId) => {
-    console.log(`🔗 Usuário ${userId} entrou na sala`);
-    socket.join(String(userId));
-  });
-
-  socket.on("disconnect", () => {
-    console.log("Cliente desconectado:", socket.id);
-  });
-});
-
-// Inicialização
+// 6. INICIALIZAÇÃO
 const start = async () => {
   try {
+    await seedDefaults();
+    iniciarVerificacaoPacotesExpirados();
+
     await app.listen({
       port: env.PORT,
       host: '0.0.0.0'

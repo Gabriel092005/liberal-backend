@@ -1,6 +1,9 @@
-import { env } from '@/Env'
-import {PrismaClient } from '@prisma/client'
+// src/lib/prisma.ts - FOR PRISMA 6.x
+import { PrismaClient } from '@prisma/client'
 
+// SIMPLE initialization - this works for Prisma 6
 export const prisma = new PrismaClient({
-    // log:env.NODE_ENV  === 'dev'? ['query'] : []
+//   log: process.env.NODE_ENV === 'dev' ? ['query'] : []
 })
+
+export default prisma

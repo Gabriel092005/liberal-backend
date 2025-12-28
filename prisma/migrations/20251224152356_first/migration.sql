@@ -95,9 +95,8 @@ CREATE TABLE "avaliacao" (
 -- CreateTable
 CREATE TABLE "Commentario" (
     "id" SERIAL NOT NULL,
-    "nota" INTEGER NOT NULL,
     "comentario" TEXT NOT NULL,
-    "avaliacaoId" INTEGER NOT NULL,
+    "usuarioId" INTEGER NOT NULL,
 
     CONSTRAINT "Commentario_pkey" PRIMARY KEY ("id")
 );
@@ -235,7 +234,7 @@ ALTER TABLE "avaliacao" ADD CONSTRAINT "avaliacao_clienteId_fkey" FOREIGN KEY ("
 ALTER TABLE "avaliacao" ADD CONSTRAINT "avaliacao_prestadorId_fkey" FOREIGN KEY ("prestadorId") REFERENCES "usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Commentario" ADD CONSTRAINT "Commentario_avaliacaoId_fkey" FOREIGN KEY ("avaliacaoId") REFERENCES "avaliacao"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Commentario" ADD CONSTRAINT "Commentario_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "carteira" ADD CONSTRAINT "carteira_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

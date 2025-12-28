@@ -30,7 +30,7 @@ export async function  UsersRoutes(app:FastifyInstance) {
 
 app.post('/users', async function (request, reply) {
   await new Promise<void>((resolve, reject) => {
-    upload.single('image')(request.raw as any, reply.raw as any, (err) => {
+    upload.single('image')(request.raw as any, reply.raw as any, (err:any) => {
       if (err) return reject(err)
       resolve()
     })
