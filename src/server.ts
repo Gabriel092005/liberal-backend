@@ -64,17 +64,20 @@ app.register(fastifyJwt, {
 app.register(fastifyCookie);
 
 app.register(cors, {
-  origin: ['http://liberalconnect.org'],
+  origin: ['https://liberalconnect.org'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   credentials: true,
 });
 
 // 4. SOCKET.IO
 export const io = new Server(app.server, {
+  path: "/api/socket.io/", // <--- ADICIONE ISSO
   cors: {
-    origin: ['http://localhost:5173'],
-    credentials: true
-  }
+    origin: ['http://localhost:5173', 'https://liberalconnect.org'],
+    credentials: true,
+    methods: ["GET", "POST"]
+  },
+  transports: ['websocket', 'polling'] // Garante compatibilidade
 });
 
 // 5. REGISTRO DE ROTAS (Depois dos plugins/parsers)
