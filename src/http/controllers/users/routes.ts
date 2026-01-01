@@ -51,8 +51,8 @@ app.post('/users', async function (request, reply) {
 
     app.post('/sessions',Authenticate)
     // No seu arquivo de rotas
-app.post("/test-push", async (request, reply) => {
-  const { userId } = request.body as { userId: string };
+app.post("/test-push ",{onRequest:[verifyJWT]}, async (request, reply) => {
+  const userId  = String(request.user.sub)
   
   await sendNotification(
     userId, 
