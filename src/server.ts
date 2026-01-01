@@ -75,7 +75,7 @@ app.register(cors, {
 // --- REFINAMENTO DO SOCKET.IO ---
 
 export const io = new Server(app.server, {
-  path: "/api/socket.io/",
+path: "/socket.io/", // <--- REMOVA O /api/ DAQUI
   cors: {
     origin: ['http://localhost:5173', 'https://liberalconnect.org'],
     credentials: true,
