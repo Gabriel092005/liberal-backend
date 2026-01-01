@@ -1,4 +1,4 @@
-import { FastifyInstance } from "fastify";
+import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { Authenticate } from "./authenticate";
 import { verifyJWT } from "../middleware/verify-jwt";
 import { upload } from "@/utills/multer";
@@ -63,8 +63,9 @@ app.post("/test-push", async (request, reply) => {
   return { ok: true };
 });
     // Rota para atualizar o Token do Firebase
-app.patch("/users/fcm-token", async (request, reply) => {
+app.patch("/users/fcm-token",{onRequest:[verifyJWT]}, async (request:FastifyRequest, reply:FastifyReply) => {
   const { fcmToken } = request.body as { fcmToken: string };
+  
   const userId = request.user.sub; // Pegando o ID do usuário logado pelo JWT
 
   await prisma.usuario.update({
