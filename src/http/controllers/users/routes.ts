@@ -21,6 +21,8 @@ import { findPrestadoresController } from "./find-prestadores";
 import { ProfileById } from "./get-user-byId";
 import { Commentar } from "./commetar-prestadores";
 import { GetComment } from "./get-comment";
+import prisma from "@/lib/prisma";
+import { sendNotification } from "@/lib/notification";
 
 
 
@@ -48,6 +50,30 @@ app.post('/users', async function (request, reply) {
 
 
     app.post('/sessions',Authenticate)
+    // No seu arquivo de rotas
+app.post("/test-push", async (request, reply) => {
+  const { userId } = request.body as { userId: string };
+  
+  await sendNotification(
+    userId, 
+    "Teste Real! 🔥", 
+    "Se você recebeu isso, o Firebase e o Service Worker estão integrados!"
+  );
+
+  return { ok: true };
+});
+    // Rota para atualizar o Token do Firebase
+app.patch("/users/fcm-token", async (request, reply) => {
+  const { fcmToken } = request.body as { fcmToken: string };
+  const userId = request.user.sub; // Pegando o ID do usuário logado pelo JWT
+
+  await prisma.usuario.update({
+    where: { id: userId },
+    data: { fcm_token: fcmToken }
+  });
+
+  return reply.status(204).send();
+});
     app.post("/ativarConta",{onRequest:[verifyJWT]}, AtivarConta)
     app.post("/desativarConta",{onRequest:[verifyJWT]},DesativarConta )
     app.post("/suspenderConta",{onRequest:[verifyJWT]},SuspenderConta)

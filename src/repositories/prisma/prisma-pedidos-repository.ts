@@ -1,6 +1,7 @@
 import { Prisma, Pedido } from "@prisma/client";
 import { OrderRepository } from "../pedidos-repository";
 import { prisma } from "@/lib/prisma";
+import { sendNotification } from "@/lib/notification";
 
 export class PrismaOrderRepository implements OrderRepository {
   async findAllOrders(query:string|undefined){
@@ -192,6 +193,13 @@ const orders = await prisma.pedido.findMany({
   async Create(data: Prisma.PedidoCreateInput) {
     console.log(data)
     const order = await prisma.pedido.create({ data });
+     if(order){
+      await sendNotification(
+    String(order.usuarioId), // ID do destino
+    "Novo Pedido Recebido! 🛍️", // Título
+    "Você tem um novo pedido de serviço aguardando aprovação." // Mensagem
+  );
+     }
     return order;
   }
 async fetchNearOrder(latitude: number, longitude: number, radiusKm = 5): Promise<(Pedido & { distance: number; dono: any })[]> {

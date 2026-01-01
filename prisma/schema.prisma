@@ -11,6 +11,7 @@ model Usuario {
   id                  Int            @id @default(autoincrement())
   nome                String
   celular             String
+  fcm_token String?
   nif                 String
   description         String         @default("Lorem ipsum dolor, sit amet consectetur adipisicing elit. Atque, eius, optio deleniti laudantium nesciunt a, repudiandae modi deserunt minus nihil ad laboriosam sit cumque iusto qui in dolore et dicta.")
   palavraPasse        String
