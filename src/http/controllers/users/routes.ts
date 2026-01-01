@@ -65,8 +65,8 @@ app.post("/test-push", async (request, reply) => {
     // Rota para atualizar o Token do Firebase
 app.patch("/users/fcm-token",{onRequest:[verifyJWT]}, async (request:FastifyRequest, reply:FastifyReply) => {
   const { fcmToken } = request.body as { fcmToken: string };
-  
-  const userId = request.user.sub; // Pegando o ID do usuário logado pelo JWT
+
+  const userId = Number(request.user.sub); // Pegando o ID do usuário logado pelo JWT
 
   await prisma.usuario.update({
     where: { id: userId },
