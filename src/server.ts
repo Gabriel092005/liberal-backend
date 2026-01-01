@@ -64,7 +64,7 @@ app.register(fastifyJwt, {
 app.register(fastifyCookie);
 
 app.register(cors, {
-  origin: ['https://liberalconnect.org'],
+  origin: ['https://liberalconnect.org','http://localhost:5173'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   credentials: true,
 });
