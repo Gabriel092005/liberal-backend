@@ -1,5 +1,5 @@
 import Fastify from "fastify";
-import { Server } from "socket.io";
+import { Server, Socket } from "socket.io";
 import cors from '@fastify/cors';
 import fastifyJwt from "@fastify/jwt";
 import fastifyCookie from "@fastify/cookie";
@@ -69,16 +69,64 @@ app.register(cors, {
   credentials: true,
 });
 
-// 4. SOCKET.IO
+// ... suas outras importações
+
+
+// --- REFINAMENTO DO SOCKET.IO ---
+
 export const io = new Server(app.server, {
-  path: "/api/socket.io/", // <--- ADICIONE ISSO
+  path: "/api/socket.io/",
   cors: {
     origin: ['http://localhost:5173', 'https://liberalconnect.org'],
     credentials: true,
     methods: ["GET", "POST"]
   },
-  transports: ['websocket', 'polling'] // Garante compatibilidade
+  // Configurações de estabilidade
+  pingTimeout: 60000, // Tempo para considerar conexão morta
+  pingInterval: 25000,
+  transports: ['websocket', 'polling'],
+  allowEIO3: true // Compatibilidade com versões mais antigas se necessário
 });
+
+// Middleware de Autenticação (Opcional, mas recomendado)
+// Isso impede conexões de usuários não logados se você enviar o Token no "auth" do client
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+  // Aqui você poderia validar o JWT se quisesse segurança máxima no Socket
+  // if (token_invalido) return next(new Error("Não autorizado"));
+  next();
+});
+
+io.on("connection", (socket: Socket) => {
+  const { id } = socket;
+  console.log(`[Socket] Conectado: ${id}`);
+
+  // Evento de Registro Seguro
+  socket.on("register", (userId: string) => {
+    if (!userId) return;
+    
+    // Opcional: Sair de salas anteriores para evitar duplicidade
+    socket.rooms.forEach(room => room !== id && socket.leave(room));
+    
+    socket.join(userId);
+    console.log(`[Socket] Usuário ${userId} mapeado ao socket ${id}`);
+    
+    // Feedback para o cliente
+    socket.emit("registered", { status: "ok", userId });
+  });
+
+  // Tratamento de Erros
+  socket.on("error", (err) => {
+    console.error(`[Socket Error] ${id}:`, err);
+  });
+
+  // Evento de Desconexão
+  socket.on("disconnect", (reason) => {
+    console.log(`[Socket] Desconectado: ${id} | Motivo: ${reason}`);
+  });
+});
+
+// --- FIM DO REFINAMENTO ---
 
 // 5. REGISTRO DE ROTAS (Depois dos plugins/parsers)
 app.register(UsersRoutes);
