@@ -35,7 +35,7 @@ export class FetcharPedidoUseCase {
          
         await this.ordersRepository.fecharPedido(prestadorId, pedidoId)
         const prestador = await this.usersRepository.findById(prestadorId);
-        const content = `${prestador?.nome},Você foi escolhido pelo cliente ${client.nome} para fechar o pedido ${pedido?.title}`;
+        const content = `${prestador?.nome}, O prestador ${client.nome} aceitou o seu pedido  de ${pedido?.title}`;
         await this.NotificationRepository.Notificar(content, prestadorId, client.image_path)
      
         const notificacao =  await this.NotificationRepository.findMyNotifications(pedido.usuarioId)

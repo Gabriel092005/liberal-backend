@@ -122,6 +122,31 @@ await this.notificationRepository.Notificar(
   user.image_path
 );
 
+const contentParaCliente = `Contacto iniciado com o prestador ${user.nome},para o pedido de ${pedido.title}. Contacto disponível!`;
+await this.notificationRepository.Notificar(
+  contentParaCliente,
+  Number(pedido.usuarioId),
+  user.image_path // Foto do prestador para o cliente ver quem é
+);
+
+// 🔔 2. Notificação para o PRESTADOR (Quem clicou)
+const contentParaPrestador = `Interesse registrado! O contacto para o pedido "${pedido.title}" foi iniciado com sucesso.`;
+await this.notificationRepository.Notificar(
+  contentParaPrestador,
+  authorId,
+  null // Pode passar um ícone de sistema ou foto do cliente se tiver
+);
+
+// 📡 ATUALIZAÇÃO VIA SOCKET (Tempo Real)
+
+// Envia para o Cliente
+const notificacoesCliente = await this.notificationRepository.findMyNotifications(pedido.usuarioId);
+io.to(String(pedido.usuarioId)).emit("user", notificacoesCliente);
+
+// Envia para o Prestador
+const notificacoesPrestador = await this.notificationRepository.findMyNotifications(authorId);
+io.to(String(authorId)).emit("user", notificacoesPrestador);
+
     // 💬 Atualiza notificações via socket
     const notificacoes = await this.notificationRepository.findMyNotifications(pedido.usuarioId);
     io.to(String(pedido.usuarioId)).emit("user", notificacoes);
