@@ -75,17 +75,31 @@ app.register(cors, {
 // --- REFINAMENTO DO SOCKET.IO ---
 
 export const io = new Server(app.server, {
-path: "/socket.io/", // <--- REMOVA O /api/ DAQUI
+  path: "/socket.io/",
   cors: {
-    origin: ['http://localhost:5173', 'https://liberalconnect.org'],
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        'http://localhost:5173',
+        'https://liberalconnect.org',
+        'https://www.liberalconnect.org'
+      ];
+      
+      // Permite se a origem estiver na lista ou se for uma requisição sem origin (como o seu teste no navegador)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        // ESSA LINHA É A CHAVE: Ela vai te mostrar no 'pm2 logs' quem o navegador está enviando
+        console.warn(`⚠️ Origem bloqueada pelo CORS: ${origin}`);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST"]
   },
-  // Configurações de estabilidade
-  pingTimeout: 60000, // Tempo para considerar conexão morta
+  pingTimeout: 60000,
   pingInterval: 25000,
   transports: ['websocket', 'polling'],
-  allowEIO3: true // Compatibilidade com versões mais antigas se necessário
+  allowEIO3: true
 });
 
 // Middleware de Autenticação (Opcional, mas recomendado)
