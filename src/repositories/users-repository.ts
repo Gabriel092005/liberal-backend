@@ -31,9 +31,36 @@ export interface FilteredUsersCostumer {
 }
 
 
+// types/prestador.ts
+
+export type Role = "ADMIN" | "PRESTADOR_INDIVIDUAL" | "PRESTADOR_COLECTIVO" | "CLIENTE_COLECTIVO" | "CLIENTE_INDIVIDUAL";
+
+export interface PrestadorProximo {
+  id: number;
+  nome: string;
+  celular: string;
+  fcm_token: string | null;
+  profissao: string;
+  image_path: string | null;
+  provincia: string;
+  municipio: string;
+  estrelas: number | null;
+  role: Role;
+  // Campo calculado pela query Haversine
+  distance: number; 
+}
+
+// Exemplo de resposta da API
+export interface NearPrestadoresResponse {
+  success: boolean;
+  count: number;
+  prestadores: PrestadorProximo[];
+}
+
 
 export interface usersRepository {
     SuspenderConta(userId:number):Promise<null>
+    FindNearPrestadores(latitude:number, logintude:number, profission:string):Promise<PrestadorProximo[]>
     findAdminProfile():Promise<Usuario | null>
     findComments():Promise<Commentario[]>
     findAllPrestadores (province?:string,municipality?:string, nome?:string,page?:number):Promise<FilteredUsersCostumer>

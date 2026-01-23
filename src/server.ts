@@ -101,6 +101,14 @@ io.on("connection", (socket: Socket) => {
   const { id } = socket;
   console.log(`[Socket] Conectado: ${id}`);
 
+  const userId = socket.handshake.query.userId;
+
+  if (userId && userId !== "null" && userId !== "undefined") {
+    // Remove de qualquer sala antiga e entra na nova
+    socket.leave(String(userId)); 
+    socket.join(String(userId));
+    console.log(`🏠 Usuário ${userId} sincronizado na sala privada.`);
+  }
   // Evento de Registro Seguro
   socket.on("register", (userId: string) => {
     if (!userId) return;

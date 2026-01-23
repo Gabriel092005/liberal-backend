@@ -10,6 +10,8 @@ interface  RegisterUseCaseRequest{
     nif:string
     profissao:string
     palavraPasse:string
+    latitude:number|undefined,
+    longitude:number | undefined,
     provincia:string,
     municipio:string,
     nomeRepresentante:string|undefined
@@ -30,6 +32,8 @@ export class RegisterUseCase {
     nomeRepresentante,
     palavraPasse,
     Role,
+    latitude,
+    longitude,
     profissao,
     provincia} : RegisterUseCaseRequest)
 
@@ -45,14 +49,9 @@ export class RegisterUseCase {
    if(userWithNif){
     throw new UserAreadyExistsError()
   }
-
-       
    if(userWithPhoneNumber){
     throw new UserAreadyExistsError()
   }
-
-
-
   // if(userWithSameEmail){
   //   throw new UserAreadyExistsError()
   // }
@@ -66,6 +65,8 @@ export class RegisterUseCase {
         profissao,
         palavraPasse,
         provincia,
+        latitude,
+        longitude,
         nomeRepresentante,
         role:Role,
     })

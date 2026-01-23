@@ -1,8 +1,54 @@
 import {Prisma, Usuario } from "@prisma/client";
-import { FilteredUsersCostumer, usersRepository } from "../users-repository";
+import { usersRepository } from "../users-repository";
 import { prisma } from "@/lib/prisma";
 
 export class PrismaUserRepository implements usersRepository{
+ async  FindNearPrestadores(latitude: number, longitude: number,profission:string){
+const radiusKm = 10; // Raio de busca em quilómetros
+
+const prestadoresProximos = await prisma.$queryRaw<
+  (any & { distance: number })[]
+>`
+  SELECT 
+    u.id,
+    u.nome,
+    u.fcm_token,
+    u.celular,
+    u.profissao,
+    (
+      6371 * acos(
+        LEAST(1, GREATEST(
+          cos(radians(${latitude})) *
+          cos(radians(u.latitude)) *
+          cos(radians(u.longitude) - radians(${longitude})) +
+          sin(radians(${latitude})) *
+          sin(radians(u.latitude)),
+        -1))
+      )
+    ) AS distance
+  FROM "usuario" AS u
+  WHERE u.latitude IS NOT NULL 
+    AND u.longitude IS NOT NULL
+    -- Filtra pelos dois tipos de prestadores no seu Enum
+    AND u.role IN ('PRESTADOR_INDIVIDUAL', 'PRESTADOR_COLECTIVO')
+    -- Filtra pela profissão exata do pedido (case-insensitive se necessário)
+    AND u.profissao ILIKE ${profission}
+    AND (
+      6371 * acos(
+        LEAST(1, GREATEST(
+          cos(radians(${latitude})) *
+          cos(radians(u.latitude)) *
+          cos(radians(u.longitude) - radians(${longitude})) +
+          sin(radians(${latitude})) *
+          sin(radians(u.latitude)),
+        -1))
+      )
+    ) <= ${radiusKm}
+  ORDER BY distance ASC;
+`;
+return prestadoresProximos
+  }
+
   async findAdminProfile(){
       const Usuario = await prisma.usuario.findFirst({
         where:{

@@ -16,6 +16,7 @@ model Usuario {
   description         String         @default("Lorem ipsum dolor, sit amet consectetur adipisicing elit. Atque, eius, optio deleniti laudantium nesciunt a, repudiandae modi deserunt minus nihil ad laboriosam sit cumque iusto qui in dolore et dicta.")
   palavraPasse        String
   estrelas            Float?
+  pushSubscription Json?
   profissao           String
   link                String?
   estado_conta        ACCOUNT_STATUS @default(ACTIVA)
@@ -25,6 +26,8 @@ model Usuario {
   provincia           String
   municipio           String
   nomeRepresentante   String?
+  latitude    Float?
+  longitude    Float?
   postsvitrineId      Int?
   Commentario         Commentario[]
   avaliacoesFeitas    Avaliacao[]    @relation("ClienteAvaliacoes")

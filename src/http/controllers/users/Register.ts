@@ -22,6 +22,8 @@ export async function Register(request: FastifyRequest, reply: FastifyReply) {
     provincia: z.string(),
     municipio: z.string(),
     nomeRepresentante: z.string().optional(),
+    latitude: z.coerce.number().optional(),
+    longitude: z.coerce.number().optional(),
     email: z.string().email().optional(), // se for opcional
     phone: z.coerce.string().optional(),
     role: z.enum([
@@ -55,6 +57,8 @@ export async function Register(request: FastifyRequest, reply: FastifyReply) {
       nome,
       email,
       phone,
+      latitude,
+      longitude,
       celular,
       municipio,
       nif,
@@ -76,6 +80,8 @@ export async function Register(request: FastifyRequest, reply: FastifyReply) {
       nomeRepresentante,
       palavraPasse,
       profissao,
+      latitude,
+      longitude,
       provincia,
       Role: role,
     });
