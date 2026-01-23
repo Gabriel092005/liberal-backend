@@ -74,8 +74,11 @@ app.register(cors, {
 
 // --- REFINAMENTO DO SOCKET.IO ---
 
+
 export const io = new Server(app.server, {
-  path: "/socket.io/",
+  // ATENÇÃO: Se o Nginx encaminha /api/socket.io/ para o seu app, 
+  // o path aqui DEVE ser exatamente o que o socket.io-client espera.
+  path: "/api/socket.io/", 
   cors: {
     origin: (origin, callback) => {
       const allowedOrigins = [
@@ -84,11 +87,9 @@ export const io = new Server(app.server, {
         'https://www.liberalconnect.org'
       ];
       
-      // Permite se a origem estiver na lista ou se for uma requisição sem origin (como o seu teste no navegador)
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        // ESSA LINHA É A CHAVE: Ela vai te mostrar no 'pm2 logs' quem o navegador está enviando
         console.warn(`⚠️ Origem bloqueada pelo CORS: ${origin}`);
         callback(new Error("Not allowed by CORS"));
       }
@@ -96,21 +97,35 @@ export const io = new Server(app.server, {
     credentials: true,
     methods: ["GET", "POST"]
   },
-  pingTimeout: 60000,
-  pingInterval: 25000,
-  transports: ['websocket', 'polling'],
+  // Configurações de resiliência
+  pingTimeout: 30000,   // Reduzi para 30s para detectar quedas mais rápido
+  pingInterval: 10000,  // Envia ping a cada 10s
+  transports: ['websocket'], // Se o cliente forçar websocket, aqui deve aceitar
   allowEIO3: true
 });
 
-// Middleware de Autenticação (Opcional, mas recomendado)
-// Isso impede conexões de usuários não logados se você enviar o Token no "auth" do client
-io.use((socket, next) => {
-  const token = socket.handshake.auth.token;
-  // Aqui você poderia validar o JWT se quisesse segurança máxima no Socket
-  // if (token_invalido) return next(new Error("Não autorizado"));
-  next();
-});
+/**
+ * HANDSHAKE & REGISTRO
+ */
+io.on("connection", (socket) => {
+  // Recupera o userId enviado na query pelo cliente
+  const userId = socket.handshake.query.userId;
 
+  if (!userId) {
+    console.error(`❌ Conexão rejeitada: Sem userId. ID: ${socket.id}`);
+    return socket.disconnect();
+  }
+
+  // O pulo do gato: Colocar o socket em uma "sala" (room) com o ID do usuário
+  // Isso permite enviar mensagens para UM usuário específico sem precisar de um array global
+  socket.join(`user_${userId}`);
+  
+  console.log(`✅ Usuário ${userId} conectado no socket ${socket.id}`);
+
+  socket.on("disconnect", (reason) => {
+    console.log(`🔌 Usuário ${userId} desconectado. Motivo: ${reason}`);
+  });
+});
 
 
 // --- FIM DO REFINAMENTO ---
