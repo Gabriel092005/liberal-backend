@@ -7,6 +7,7 @@ import { FecharPedido } from "./fecharPedido";
 import { RevokeOrder } from "./revokeOrders";
 import { ImterromperPedido } from "./interromper-pedido";
 import { FetchAllOrders } from "./fech-all-orders";
+import { concluirPedidoController } from "./concluirPedido";
 
 
 export async function OrderRoutes(app:FastifyInstance) {
@@ -14,6 +15,7 @@ export async function OrderRoutes(app:FastifyInstance) {
    app.put("/interromper", {onRequest:[verifyJWT]},ImterromperPedido)
    app.get("/all-orders/:query",{onRequest:[verifyJWT]}, FetchAllOrders)
    app.post("/order", {onRequest:[verifyJWT]}, createOrder)  
+   app.patch("/pedidos/concluir", { onRequest: [verifyJWT] }, concluirPedidoController);
    app.delete("/revoke/:pedidoId?",{onRequest:[verifyJWT]}, RevokeOrder)
    app.put("/fechar", {onRequest:[verifyJWT]}, FecharPedido)  
    app.get("/MyOrders/:query?", {onRequest:[verifyJWT]}, MyOrders)  

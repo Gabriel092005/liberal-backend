@@ -104,6 +104,20 @@ async findAnOrderInterested(pedidoId: number) {
   return pedido
 }
 
+// Conclui o pedido: Muda o status na tabela Pedido
+async concluirPedidoPrestador(prestadorId: number, pedidoId: number): Promise<number> {
+  // Primeiro verificamos se esse prestador realmente tem interesse nesse pedido
+ 
+  console.log("prestador:",prestadorId, "pedido" ,pedidoId)
+  // Atualizamos o status do Pedido para INTERRUPTED (que tratamos como concluído)
+  const pedidoAtualizado = await prisma.pedido.update({
+    where: { id: Number(pedidoId) },
+    data: { status: "CONFIRMED" }
+  });
+
+  return pedidoAtualizado.id;
+}
+
   async fecharPedido(prestadorId: number, pedidoId: number){
       const interessado = await prisma.interesse.findFirst({
     where: {

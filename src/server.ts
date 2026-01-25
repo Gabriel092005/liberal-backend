@@ -27,7 +27,7 @@ import { VitrineRoutes } from "./http/controllers/vitrine/routes";
 import { categoryRoutes } from "./http/controllers/category/routes";
 
 const app = Fastify({
-  logger: true, 
+  logger: false, 
 });
 
 // 1. REGISTRE O MULTIPART PRIMEIRO (Para evitar o Erro 415)
@@ -73,60 +73,55 @@ app.register(cors, {
 
 
 // --- REFINAMENTO DO SOCKET.IO ---
+export let io: Server;
 
+// ... resto do seu código (plugins, rotas, etc)
 
-export const io = new Server(app.server, {
-  // ATENÇÃO: Se o Nginx encaminha /api/socket.io/ para o seu app, 
-  // o path aqui DEVE ser exatamente o que o socket.io-client espera.
-  path: "/api/socket.io/", 
-  cors: {
-    origin: (origin, callback) => {
-      const allowedOrigins = [
-        'http://localhost:5173',
-        'https://liberalconnect.org',
-        'https://www.liberalconnect.org'
-      ];
-      
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.warn(`⚠️ Origem bloqueada pelo CORS: ${origin}`);
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-    methods: ["GET", "POST"]
-  },
-  // Configurações de resiliência
-  pingTimeout: 30000,   // Reduzi para 30s para detectar quedas mais rápido
-  pingInterval: 10000,  // Envia ping a cada 10s
-  transports: ['websocket'], // Se o cliente forçar websocket, aqui deve aceitar
-  allowEIO3: true
-});
+const start = async () => {
+  try {
+    await seedDefaults();
+    iniciarVerificacaoPacotesExpirados();
 
-/**
- * HANDSHAKE & REGISTRO
- */
-io.on("connection", (socket) => {
-  // Recupera o userId enviado na query pelo cliente
-  const userId = socket.handshake.query.userId;
+    // 2. AGUARDE o Fastify inicializar o servidor interno
+    await app.ready();
 
-  if (!userId) {
-    console.error(`❌ Conexão rejeitada: Sem userId. ID: ${socket.id}`);
-    return socket.disconnect();
-  }
+    // 3. AGORA você vincula o Socket.io ao app.server
+    io = new Server(app.server, {
+      path: "/api/socket.io/", 
+      transports: ['polling', 'websocket'], // Polling ajuda a evitar o erro 400 inicial
+      cors: {
+        origin: ['http://localhost:5173', 'https://liberalconnect.org'],
+        credentials: true,
+      },
+      pingTimeout: 30000,
+      pingInterval: 10000,
+    });
 
-  // O pulo do gato: Colocar o socket em uma "sala" (room) com o ID do usuário
-  // Isso permite enviar mensagens para UM usuário específico sem precisar de um array global
-  socket.join(`user_${userId}`);
+    
+    // 4. Configure os eventos
+    io.on("connection", (socket) => {
+      const userId = socket.handshake.query.userId;
+
+      io.on("register", (userId) => {
+        io.socketsJoin(String(userId)); // Força entrar na sala com ID string
+      });
   
-  console.log(`✅ Usuário ${userId} conectado no socket ${socket.id}`);
+      if (!userId) {
+        console.error(`❌ Sem userId. ID: ${socket.id}`);
+        return socket.disconnect();
+      }
+      socket.join(String(userId))
+      console.log(`✅ Usuário ${userId} conectado`);
+    });
 
-  socket.on("disconnect", (reason) => {
-    console.log(`🔌 Usuário ${userId} desconectado. Motivo: ${reason}`);
-  });
-});
-
+    // 5. Só então inicie o listen
+    await app.listen({ port: env.PORT, host: '0.0.0.0' });
+    console.log("Servidor rodando 🐱‍🏍");
+  } catch (err) {
+    console.error(err);
+    process.exit(1);
+  }
+};
 
 // --- FIM DO REFINAMENTO ---
 
@@ -144,21 +139,6 @@ app.register(NotificacaoRoutes);
 app.register(VitrineRoutes);
 app.register(categoryRoutes);
 
-// 6. INICIALIZAÇÃO
-const start = async () => {
-  try {
-    await seedDefaults();
-    iniciarVerificacaoPacotesExpirados();
 
-    await app.listen({
-      port: env.PORT,
-      host: '0.0.0.0'
-    });
-    console.log("Servidor rodando 🐱‍🏍");
-  } catch (err) {
-    console.error("Erro ao iniciar o servidor:", err);
-    process.exit(1);
-  }
-};
 
 start();

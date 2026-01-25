@@ -37,6 +37,7 @@ export interface OrderRepository {
     AcceptedOrder(costumerId:number,orderId:number ):Promise<null>
     RevokeOrder(costumerId:number,orderId:number):Promise<null>
     findAnOrderInterested(pedidoId:number):Promise<interessados[]|undefined>
+    concluirPedidoPrestador(prestadorId:number, orderId:number) : Promise<number>
     Create(data : Prisma.PedidoCreateInput) : Promise<Pedido>
     findAllOrders(query?:string):Promise<Pedido[]>
     FindMyOrders(authorId:number,query:string|undefined):Promise<Pedido[]>

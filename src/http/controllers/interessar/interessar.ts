@@ -9,14 +9,17 @@ export  async function Interessar (req:FastifyRequest, reply:FastifyReply){
    }
 )
  try {
+
       const {pedidoId} = InteressarRequestBody.parse(req.body)
       const authorIdId = req.user.sub
+
+      console.log(req.body)
 
       
 
       const {interesse} = await makeInteressar().execute({
-        authorId:authorIdId,
-        pedidoId
+        authorId:Number(authorIdId),
+        pedidoId:Number(pedidoId)
       })
 
       return reply.status(201).send(interesse)

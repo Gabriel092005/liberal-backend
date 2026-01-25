@@ -2,6 +2,9 @@ import { InteresseRepository } from "../interessar-repository";
 import { prisma } from "@/lib/prisma";
 
 export class PrismaInteresseRepository implements InteresseRepository{
+  concluirInteresse(prestadorId: number, orderId: number): Promise<number> {
+    throw new Error("Method not implemented.");
+  }
  async findByUserAndPedido(userId: number, pedidoId: number) {
   return await prisma.interesse.findFirst({
     where: {
@@ -12,7 +15,8 @@ export class PrismaInteresseRepository implements InteresseRepository{
 }
 async findAllByPrestador(prestadorId: number) {
   const interesses = await prisma.interesse.findMany({
-    where: { prestadorId },
+    where: { prestadorId},
+    
     include: {
       pedido: {
         include: { // inclui todos os dados do pedido
@@ -38,6 +42,7 @@ async findAllByPrestador(prestadorId: number) {
 }
 
    async interessar(prestadorId: number, orderId: number){
+    console.log("prestador:",prestadorId, "orderId:",orderId)
          const Interesse = await prisma.interesse.create({
             data:{
                 prestadorId:Number(prestadorId),
@@ -46,4 +51,5 @@ async findAllByPrestador(prestadorId: number) {
          })
           return Interesse
     } 
+    
 }
