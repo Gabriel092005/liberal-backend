@@ -2,6 +2,7 @@ import { InteresseRepository } from "../interessar-repository";
 import { prisma } from "@/lib/prisma";
 
 export class PrismaInteresseRepository implements InteresseRepository{
+  
   concluirInteresse(prestadorId: number, orderId: number): Promise<number> {
     throw new Error("Method not implemented.");
   }
