@@ -85,33 +85,30 @@ const start = async () => {
     // 2. AGUARDE o Fastify inicializar o servidor interno
     await app.ready();
 
-    // 3. AGORA você vincula o Socket.io ao app.server
     io = new Server(app.server, {
-      path: "/api/socket.io/", 
-      transports: ['polling', 'websocket'], // Polling ajuda a evitar o erro 400 inicial
+      path: "/api/socket.io/", // Mantenha este se quiser usar o prefixo /api
+      transports: ['polling', 'websocket'],
       cors: {
         origin: ['http://localhost:5173', 'https://liberalconnect.org'],
         credentials: true,
       },
-      pingTimeout: 30000,
-      pingInterval: 10000,
     });
-
     
-    // 4. Configure os eventos
     io.on("connection", (socket) => {
       const userId = socket.handshake.query.userId;
-
-      io.on("register", (userId) => {
-        io.socketsJoin(String(userId)); // Força entrar na sala com ID string
-      });
-  
+      
       if (!userId) {
         console.error(`❌ Sem userId. ID: ${socket.id}`);
         return socket.disconnect();
       }
-      socket.join(String(userId))
-      console.log(`✅ Usuário ${userId} conectado`);
+    
+      socket.join(String(userId));
+      console.log(`✅ Usuário ${userId} conectado no socket ${socket.id}`);
+    
+      // ESCUTE NO SOCKET, NÃO NO IO
+      socket.on("register", (id) => {
+        socket.join(String(id));
+      });
     });
 
     // 5. Só então inicie o listen
