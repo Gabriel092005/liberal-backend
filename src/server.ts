@@ -28,7 +28,7 @@ import { categoryRoutes } from "./http/controllers/category/routes";
 
 import fs from 'node:fs';
 import multer from "multer";
-import { fileURLToPath } from "url";
+
 
 const app = Fastify({
   logger: false, 
@@ -136,7 +136,7 @@ const start = async () => {
     iniciarVerificacaoPacotesExpirados();
 
 
-    
+
     // 2. AGUARDE o Fastify inicializar o servidor interno
     await app.ready();
 
