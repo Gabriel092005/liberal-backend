@@ -79,18 +79,18 @@ app.addContentTypeParser('multipart/form-data', (request, payload, done) => {
 });
 
 // No registro do Fastify Static:
-// app.register(fastifyStatic, {
-//   root: uploadDir,
-//   prefix: '/uploads/',
-// });
+app.register(fastifyStatic, {
+  root: uploadDir,
+  prefix: '/uploads/',
+});
 
 
 // Registro do Static
-app.register(fastifyStatic, {
-  root: UPLOAD_PATH,
-  prefix: '/uploads/',
-  decorateReply: true 
-});
+// app.register(fastifyStatic, {
+//   root: UPLOAD_PATH,
+//   prefix: '/uploads/',
+//   decorateReply: true 
+// });
 
 // --- 4. LOGS DE DIAGNÓSTICO (HOOKS) ---
 
