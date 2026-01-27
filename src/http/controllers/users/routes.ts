@@ -23,13 +23,12 @@ import { Commentar } from "./commetar-prestadores";
 import { GetComment } from "./get-comment";
 import prisma from "@/lib/prisma";
 import { sendNotification } from "@/lib/notification";
+import { updateUserLocation } from "./update-prestador-location";
 
 
 
 
 export async function  UsersRoutes(app:FastifyInstance) {
-
-
 app.post('/users', async function (request, reply) {
   await new Promise<void>((resolve, reject) => {
     upload.single('image')(request.raw as any, reply.raw as any, (err:any) => {
@@ -85,6 +84,7 @@ app.patch("/users/fcm-token",{onRequest:[verifyJWT]}, async (request:FastifyRequ
     app.get('/me',{onRequest : [verifyJWT] } ,Profile)
     app.get('/profileById/:userId',ProfileById),
     app.get("/comment",GetComment)
+    app.put("/update-location",{onRequest:[verifyJWT]},updateUserLocation)
     app.put('/update', { onRequest: [verifyJWT] },UpdateProfile),
     app.get("/admin/metrics/sales", getMonthlySalesController);
     app.get('/users/costumers/:province=province & nome=nome & municipality=municipality & page=page',findCustomersController)
@@ -93,9 +93,4 @@ app.patch("/users/fcm-token",{onRequest:[verifyJWT]}, async (request:FastifyRequ
     app.post("/log-out", LogOut);
     app.post("/commentar", Commentar)
     app.put('/update/profile-image', { onRequest: [verifyJWT]}, updateProfileImage)
-
-
-
-
-    
 }

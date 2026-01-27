@@ -60,6 +60,7 @@ export interface NearPrestadoresResponse {
 
 export interface usersRepository {
     SuspenderConta(userId:number):Promise<null>
+    updatePrestadorLocation(prestadorId:number, latitude:string, logintude:string, location:string|undefined):Promise<void>
     FindNearPrestadores(latitude:number, logintude:number, profission:string):Promise<PrestadorProximo[]>
     findAdminProfile():Promise<Usuario | null>
     findComments():Promise<Commentario[]>

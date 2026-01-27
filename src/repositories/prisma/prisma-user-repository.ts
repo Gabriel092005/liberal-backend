@@ -2,7 +2,20 @@ import {Prisma, Usuario } from "@prisma/client";
 import { usersRepository } from "../users-repository";
 import { prisma } from "@/lib/prisma";
 
+
 export class PrismaUserRepository implements usersRepository{
+  async updatePrestadorLocation(prestadorId: number, latitude: string, logintude: string, location: string|undefined){
+      await prisma.usuario.update({
+        where:{
+          id:Number(prestadorId)
+        },data:{
+          latitude:Number(latitude),
+          longitude:Number(logintude),
+          provincia:location
+        }
+      })
+
+  }
  async  FindNearPrestadores(latitude: number, longitude: number,profission:string){
 const radiusKm = 10; // Raio de busca em quilómetros
 

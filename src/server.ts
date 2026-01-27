@@ -26,33 +26,71 @@ import { NotificacaoRoutes } from "./http/controllers/notification/routes";
 import { VitrineRoutes } from "./http/controllers/vitrine/routes";
 import { categoryRoutes } from "./http/controllers/category/routes";
 
+import fs from 'node:fs';
+import multer from "multer";
+
 const app = Fastify({
   logger: false, 
 });
+const isProduction = process.platform === 'linux';
 
-// 1. REGISTRE O MULTIPART PRIMEIRO (Para evitar o Erro 415)
-// REMOVI o multer.contentParser daqui.
-app.register(multipart, {
-  attachFieldsToBody: false, // Isso permite acessar campos de texto via request.body
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB
+const UPLOAD_PATH = isProduction
+  ? '/root/api_liberal/uploads' // Caminho fixo da sua VPS
+  : path.resolve(process.cwd(), 'uploads'); // Caminho local no seu Windows
+
+if (!fs.existsSync(UPLOAD_PATH)) {
+  fs.mkdirSync(UPLOAD_PATH, { recursive: true });
+  console.log('📁 [SISTEMA] Pasta de uploads criada em:', UPLOAD_PATH);
+} else {
+  console.log('✅ [SISTEMA] Pasta de uploads detectada em:', UPLOAD_PATH);
+}
+
+// --- 2. CONFIGURAÇÃO DO MULTER ---
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    console.log(`📥 [MULTER] Recebendo arquivo: ${file.originalname}`);
+    cb(null, UPLOAD_PATH); // Salva na pasta correta que o static lê
   },
+  filename: (req, file, cb) => {
+    const uniqueName = `trem-${Date.now()}-${path.extname(file.originalname)}`;
+    console.log(`💾 [MULTER] Salvando como: ${uniqueName}`);
+    cb(null, uniqueName);
+  }
 });
 
-// 2. ARQUIVOS ESTÁTICOS
-const uploadPath = path.join(process.cwd(), 'src', 'http', 'controllers', 'uploads');
+export const upload = multer({ 
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 } 
+});
+
+// --- 3. REGISTRO DE PLUGINS ---
+
+// IMPORTANTE: Parser para não dar erro 415
+app.addContentTypeParser('multipart/form-data', (request, payload, done) => {
+  done(null);
+});
+
+// Registro do Static
 app.register(fastifyStatic, {
-  root: uploadPath,
+  root: UPLOAD_PATH,
   prefix: '/uploads/',
+  decorateReply: true 
 });
 
+// --- 4. LOGS DE DIAGNÓSTICO (HOOKS) ---
+
+// Log para cada vez que alguém tentar ACESSAR uma imagem
 app.addHook('onRequest', (request, reply, done) => {
   if (request.url.startsWith('/uploads/')) {
-    const decodedUrl = decodeURIComponent(request.url);
-    request.raw.url = decodedUrl;
+    const filePath = path.join(UPLOAD_PATH, request.url.replace('/uploads/', ''));
+    const exists = fs.existsSync(filePath);
+    console.log(`🔍 [STATIC] Pedido de imagem: ${request.url}`);
+    console.log(`📂 [STATIC] Tentando ler em: ${filePath} | Existe? ${exists ? 'SIM' : 'NÃO'}`);
   }
   done();
 });
+
+
 
 // 3. SEGURANÇA E AUTH
 app.register(fastifyJwt, {
@@ -85,30 +123,33 @@ const start = async () => {
     // 2. AGUARDE o Fastify inicializar o servidor interno
     await app.ready();
 
+    // 3. AGORA você vincula o Socket.io ao app.server
     io = new Server(app.server, {
-      path: "/api/socket.io/", // Mantenha este se quiser usar o prefixo /api
-      transports: ['polling', 'websocket'],
+      path: "/api/socket.io/", 
+      transports: ['polling', 'websocket'], // Polling ajuda a evitar o erro 400 inicial
       cors: {
         origin: ['http://localhost:5173', 'https://liberalconnect.org'],
         credentials: true,
       },
+      pingTimeout: 30000,
+      pingInterval: 10000,
     });
+
     
+    // 4. Configure os eventos
     io.on("connection", (socket) => {
       const userId = socket.handshake.query.userId;
-      
+
+      io.on("register", (userId) => {
+        io.socketsJoin(String(userId)); // Força entrar na sala com ID string
+      });
+  
       if (!userId) {
         console.error(`❌ Sem userId. ID: ${socket.id}`);
         return socket.disconnect();
       }
-    
-      socket.join(String(userId));
-      console.log(`✅ Usuário ${userId} conectado no socket ${socket.id}`);
-    
-      // ESCUTE NO SOCKET, NÃO NO IO
-      socket.on("register", (id) => {
-        socket.join(String(id));
-      });
+      socket.join(String(userId))
+      console.log(`✅ Usuário ${userId} conectado`);
     });
 
     // 5. Só então inicie o listen
