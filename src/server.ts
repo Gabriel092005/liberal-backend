@@ -28,6 +28,7 @@ import { categoryRoutes } from "./http/controllers/category/routes";
 
 import fs from 'node:fs';
 import multer from "multer";
+import { fileURLToPath } from "url";
 
 const app = Fastify({
   logger: false, 
@@ -35,6 +36,7 @@ const app = Fastify({
 const isProduction = process.platform === 'linux';
 
 const __dirname = process.cwd(); 
+
 
 // Define a pasta de uploads na raiz do projeto
 const uploadDir = path.resolve(__dirname, 'uploads');
@@ -77,18 +79,18 @@ app.addContentTypeParser('multipart/form-data', (request, payload, done) => {
 });
 
 // No registro do Fastify Static:
-app.register(fastifyStatic, {
-  root: uploadDir,
-  prefix: '/uploads/',
-});
+// app.register(fastifyStatic, {
+//   root: uploadDir,
+//   prefix: '/uploads/',
+// });
 
 
 // Registro do Static
-// app.register(fastifyStatic, {
-//   root: UPLOAD_PATH,
-//   prefix: '/uploads/',
-//   decorateReply: true 
-// });
+app.register(fastifyStatic, {
+  root: UPLOAD_PATH,
+  prefix: '/uploads/',
+  decorateReply: true 
+});
 
 // --- 4. LOGS DE DIAGNÓSTICO (HOOKS) ---
 
