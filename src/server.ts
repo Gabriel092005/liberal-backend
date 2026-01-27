@@ -34,6 +34,12 @@ const app = Fastify({
 });
 const isProduction = process.platform === 'linux';
 
+const __dirname = process.cwd(); 
+
+// Define a pasta de uploads na raiz do projeto
+const uploadDir = path.resolve(__dirname, 'uploads');
+
+
 const UPLOAD_PATH = isProduction
   ? '/root/api_liberal/uploads' // Caminho fixo da sua VPS
   : path.resolve(process.cwd(), 'uploads'); // Caminho local no seu Windows
@@ -70,12 +76,19 @@ app.addContentTypeParser('multipart/form-data', (request, payload, done) => {
   done(null);
 });
 
-// Registro do Static
+// No registro do Fastify Static:
 app.register(fastifyStatic, {
-  root: UPLOAD_PATH,
+  root: uploadDir,
   prefix: '/uploads/',
-  decorateReply: true 
 });
+
+
+// Registro do Static
+// app.register(fastifyStatic, {
+//   root: UPLOAD_PATH,
+//   prefix: '/uploads/',
+//   decorateReply: true 
+// });
 
 // --- 4. LOGS DE DIAGNÓSTICO (HOOKS) ---
 
