@@ -135,6 +135,8 @@ const start = async () => {
     await seedDefaults();
     iniciarVerificacaoPacotesExpirados();
 
+
+    
     // 2. AGUARDE o Fastify inicializar o servidor interno
     await app.ready();
 
