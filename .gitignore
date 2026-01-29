@@ -5,5 +5,5 @@ src/lib/*.json
 # Adicione isso ao final do arquivo .gitignore
 uploads/
 node_modules/
-.env
+
 dist/

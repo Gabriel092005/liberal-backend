@@ -8,7 +8,7 @@ import fastifyStatic from '@fastify/static';
 import path from 'path';
 
 // Importação das Configurações e Rotas
-import { env } from "./Env";
+
 import { main as seedDefaults } from "./defaults";
 import { iniciarVerificacaoPacotesExpirados } from "./Jobs/verificar-pacotes-expirados";
 
@@ -28,6 +28,7 @@ import { categoryRoutes } from "./http/controllers/category/routes";
 
 import fs from 'node:fs';
 import multer from "multer";
+import { env } from "./Env";
 
 
 const app = Fastify({

@@ -1,11 +1,13 @@
 {
   "name": "03-api-solid",
+  "type": "module", 
+  "main": "build/server.js",
   "version": "1.0.0",
-  "main": "index.js",
+
   "scripts": {
     "start:dev": "tsx watch src/server.ts",
-    "start": "node build/server.js",
-    "build": "tsup src --out-dir build",
+   "build": "tsup src --out-dir build --format esm --shims --clean --external prisma --external @prisma/client",
+  "start": "node build/server.js",
     "test": "vitest run --dir src/use-cases",
     "test:create-prisma-environment": "npm link ./prisma/vitest-environment-prisma",
     "test:install-prisma-environment": "npm link vitest-environment-prisma",
