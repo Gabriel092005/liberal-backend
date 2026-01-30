@@ -1,22 +1,25 @@
 generator client {
-provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
-
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
 model Usuario {
   id                  Int            @id @default(autoincrement())
   nome                String
   celular             String
-  fcm_token String?
+  fcm_token           String?
+  posts               Postsvitrine[] @relation("AutorPosts") // Relacionado ao campo usuario em Postsvitrine
+  likes               Like[] // Relacionado ao model Like
+  comments            Comment[] // Relacionado ao model Comments
   nif                 String
   description         String         @default("Lorem ipsum dolor, sit amet consectetur adipisicing elit. Atque, eius, optio deleniti laudantium nesciunt a, repudiandae modi deserunt minus nihil ad laboriosam sit cumque iusto qui in dolore et dicta.")
   palavraPasse        String
   estrelas            Float?
-  pushSubscription Json?
+  pushSubscription    Json?
   profissao           String
   link                String?
   estado_conta        ACCOUNT_STATUS @default(ACTIVA)
@@ -26,8 +29,8 @@ model Usuario {
   provincia           String
   municipio           String
   nomeRepresentante   String?
-  latitude    Float?
-  longitude    Float?
+  latitude            Float?
+  longitude           Float?
   postsvitrineId      Int?
   Commentario         Commentario[]
   avaliacoesFeitas    Avaliacao[]    @relation("ClienteAvaliacoes")
@@ -38,7 +41,6 @@ model Usuario {
   interesses          Interesse[]    @relation("InteressePrestador")
   notificacoes        Notificacao[]
   pedidos             Pedido[]
-  Postsvitrine        Postsvitrine[]
   transacoes          Transacao[]
 
   @@map("usuario")
@@ -187,11 +189,57 @@ model Postsvitrine {
   description String?
   created_at  DateTime @default(now())
   image_path  String?
-  usuarioId   Int
-  usuario     Usuario  @relation(fields: [usuarioId], references: [id])
+
+  usuarioId Int
+  usuario   Usuario @relation("AutorPosts", fields: [usuarioId], references: [id])
+
+  likes    Like[]
+  comments Comment[]
 
   @@map("postsvitrine")
 }
+
+model Like {
+  id         Int      @id @default(autoincrement())
+  created_at DateTime @default(now())
+
+  // Quem curtiu
+  usuarioId Int
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  // Qual post foi curtido
+  postId Int
+  post   Postsvitrine @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  // Garante que um usuário só possa curtir o mesmo post uma vez
+  @@unique([usuarioId, postId])
+  @@map("likes")
+}
+
+model Comment {
+  id         Int      @id @default(autoincrement())
+  content    String   @db.Text
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Quem comentou
+  usuarioId Int
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  // Em qual post comentou
+  postId Int
+  post   Postsvitrine @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+// Nota: Certifique-se de atualizar seu model Usuario para incluir as relações inversas:
+// model Usuario {
+//   id        Int            @id @default(autoincrement())
+//   posts     Postsvitrine[]
+//   likes     Like[]
+//   comments  Comment[]
+// }
 
 model receitas {
   id     Int @id @default(autoincrement())
@@ -222,7 +270,7 @@ enum COSTUMER_TYPES {
 enum STATUS {
   PENDING
   INTERRUPTED
-    CONFIRMED
+  CONFIRMED
   ACEPTED
 }
 
