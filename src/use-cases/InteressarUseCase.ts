@@ -42,6 +42,7 @@
 
       // 🔍 Verifica se o pedido existe
       const pedido = await this.pedidosRepository.findById(pedidoId);
+
       if (!pedido) throw new resourceNotFoundError();
 
       // 🔍 Verifica se já demonstrou interesse
@@ -70,6 +71,9 @@
       if (!interesse) {
         throw new Error("Falha ao registrar interesse no pedido");
       }
+
+
+    
 
       // 💸 Agora que o interesse foi criado, faz o desconto
       //Habilita-se depois de 6 meses
@@ -148,6 +152,16 @@
   // Envia para o Prestador
   const notificacoesPrestador = await this.notificationRepository.findMyNotifications(authorId);
   io.to(String(authorId)).emit("user", notificacoesPrestador);
+  
+  io.emit("novo_interessado", {
+    prestadorId: user.id,
+    nome: user.nome,
+    foto: user.image_path,
+    profissao: user.profissao || "Profissional",
+    pedidoId: pedido.id
+  });
+
+ 
 
       // 💬 Atualiza notificações via socket
       const notificacoes = await this.notificationRepository.findMyNotifications(pedido.usuarioId);

@@ -88,7 +88,7 @@ app.register(fastifyStatic, {
 
 // Registro do Static
 // app.register(fastifyStatic, {
-//   root: UPLOAD_PATH,
+  //   root: UPLOAD_PATH,
 //   prefix: '/uploads/',
 //   decorateReply: true 
 // });
@@ -127,7 +127,7 @@ app.register(cors, {
 
 
 // --- REFINAMENTO DO SOCKET.IO ---
-export let io: Server;
+let io: Server;
 
 // ... resto do seu código (plugins, rotas, etc)
 
@@ -140,7 +140,7 @@ const start = async () => {
 
     // 2. AGUARDE o Fastify inicializar o servidor interno
     await app.ready();
-
+    
     // 3. AGORA você vincula o Socket.io ao app.server
     io = new Server(app.server, {
       path: "/api/socket.io/", 
@@ -152,24 +152,38 @@ const start = async () => {
       pingTimeout: 30000,
       pingInterval: 10000,
     });
+    
+
+    io.on("connection", (socket) => {
+      // O Insomnia envia parâmetros via handshake.query
+      const { userId } = socket.handshake.query;
 
     
-    // 4. Configure os eventos
-    io.on("connection", (socket) => {
-      const userId = socket.handshake.query.userId;
+      if (userId) {
+        const room = String(userId);
+        socket.join(room);
 
-      io.on("register", (userId) => {
-        io.socketsJoin(String(userId)); // Força entrar na sala com ID string
-      });
-  
-      if (!userId) {
-        console.error(`❌ Sem userId. ID: ${socket.id}`);
-        return socket.disconnect();
+        socket.on("join_room", (userId) => {
+          if (userId) {
+          socket.join(String(userId));
+            console.log(`Usuário ${userId} está online na sala privada.`);
+          }
+        });
+        
+        console.log(`🔌 [Socket] Novo cliente conectado: ${socket.id}`);
+        console.log(`🏠 [Socket] Cliente inserido na sala: ${room}`);
+    
+        // LOG CRUCIAL: Verifique se isso aparece no seu terminal
+        const members = io.sockets.adapter.rooms.get(room)?.size || 0;
+        console.log(`👥 [Debug] Pessoas na sala ${room} agora: ${members}`);
+      } else {
+        console.log("⚠️ [Socket] Cliente conectado sem userId na Query String");
       }
-      socket.join(String(userId))
-      console.log(`✅ Usuário ${userId} conectado`);
+    
+      socket.on("disconnect", () => {
+        console.log("❌ [Socket] Cliente desconectado");
+      });
     });
-
     // 5. Só então inicie o listen
     await app.listen({ port: env.PORT, host: '0.0.0.0' });
     console.log("Servidor rodando 🐱‍🏍");
@@ -178,6 +192,7 @@ const start = async () => {
     process.exit(1);
   }
 };
+export { io, app };
 
 // --- FIM DO REFINAMENTO ---
 

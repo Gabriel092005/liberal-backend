@@ -43,13 +43,13 @@ async findAllByPrestador(prestadorId: number) {
 }
 
    async interessar(prestadorId: number, orderId: number){
-    console.log("prestador:",prestadorId, "orderId:",orderId)
          const Interesse = await prisma.interesse.create({
             data:{
                 prestadorId:Number(prestadorId),
                 pedidoId:Number(orderId)
             }
          })
+       
           return Interesse
     } 
     

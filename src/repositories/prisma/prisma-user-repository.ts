@@ -3,7 +3,7 @@ import { usersRepository } from "../users-repository";
 import { prisma } from "@/lib/prisma";
 
 
-export class PrismaUserRepository implements usersRepository{
+export class PrismaUserRepository implements usersRepository {
   async updatePrestadorLocation(prestadorId: number, latitude: string, logintude: string, location: string|undefined){
       await prisma.usuario.update({
         where:{

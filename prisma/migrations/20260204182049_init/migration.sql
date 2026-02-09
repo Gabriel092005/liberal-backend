@@ -2,10 +2,10 @@
 CREATE TYPE "COSTUMER_TYPES" AS ENUM ('COMPANY', 'INDIVIDUAL');
 
 -- CreateEnum
-CREATE TYPE "STATUS" AS ENUM ('PENDING', 'INTERRUPTED', 'ACEPTED');
+CREATE TYPE "STATUS" AS ENUM ('PENDING', 'INTERRUPTED', 'CONFIRMED', 'ACEPTED');
 
 -- CreateEnum
-CREATE TYPE "STATUS_INTERESTED" AS ENUM ('PENDING', 'INTERRUPTED', 'ACEPTED');
+CREATE TYPE "STATUS_INTERESTED" AS ENUM ('PENDING', 'CONFIRMED', 'INTERRUPTED', 'ACEPTED');
 
 -- CreateEnum
 CREATE TYPE "ACCOUNT_STATUS" AS ENUM ('DESATIVADA', 'ACTIVA', 'PENDENTE');
@@ -24,10 +24,12 @@ CREATE TABLE "usuario" (
     "id" SERIAL NOT NULL,
     "nome" TEXT NOT NULL,
     "celular" TEXT NOT NULL,
+    "fcm_token" TEXT,
     "nif" TEXT NOT NULL,
     "description" TEXT NOT NULL DEFAULT 'Lorem ipsum dolor, sit amet consectetur adipisicing elit. Atque, eius, optio deleniti laudantium nesciunt a, repudiandae modi deserunt minus nihil ad laboriosam sit cumque iusto qui in dolore et dicta.',
     "palavraPasse" TEXT NOT NULL,
     "estrelas" DOUBLE PRECISION,
+    "pushSubscription" JSONB,
     "profissao" TEXT NOT NULL,
     "link" TEXT,
     "estado_conta" "ACCOUNT_STATUS" NOT NULL DEFAULT 'ACTIVA',
@@ -37,6 +39,8 @@ CREATE TABLE "usuario" (
     "provincia" TEXT NOT NULL,
     "municipio" TEXT NOT NULL,
     "nomeRepresentante" TEXT,
+    "latitude" DOUBLE PRECISION,
+    "longitude" DOUBLE PRECISION,
     "postsvitrineId" INTEGER,
 
     CONSTRAINT "usuario_pkey" PRIMARY KEY ("id")
@@ -182,6 +186,28 @@ CREATE TABLE "postsvitrine" (
 );
 
 -- CreateTable
+CREATE TABLE "likes" (
+    "id" SERIAL NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "usuarioId" INTEGER NOT NULL,
+    "postId" INTEGER NOT NULL,
+
+    CONSTRAINT "likes_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "comments" (
+    "id" SERIAL NOT NULL,
+    "content" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+    "usuarioId" INTEGER NOT NULL,
+    "postId" INTEGER NOT NULL,
+
+    CONSTRAINT "comments_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "receitas" (
     "id" SERIAL NOT NULL,
     "amount" INTEGER NOT NULL DEFAULT 0,
@@ -212,6 +238,9 @@ CREATE TABLE "category" (
 -- CreateIndex
 CREATE UNIQUE INDEX "carteira_usuarioId_key" ON "carteira"("usuarioId");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "likes_usuarioId_postId_key" ON "likes"("usuarioId", "postId");
+
 -- AddForeignKey
 ALTER TABLE "favoritos" ADD CONSTRAINT "favoritos_clienteId_fkey" FOREIGN KEY ("clienteId") REFERENCES "usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
@@ -222,10 +251,10 @@ ALTER TABLE "favoritos" ADD CONSTRAINT "favoritos_prestadorId_fkey" FOREIGN KEY 
 ALTER TABLE "pedidos" ADD CONSTRAINT "pedidos_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "interesse" ADD CONSTRAINT "interesse_prestadorId_fkey" FOREIGN KEY ("prestadorId") REFERENCES "usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "interesse" ADD CONSTRAINT "interesse_pedidoId_fkey" FOREIGN KEY ("pedidoId") REFERENCES "pedidos"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "interesse" ADD CONSTRAINT "interesse_pedidoId_fkey" FOREIGN KEY ("pedidoId") REFERENCES "pedidos"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "interesse" ADD CONSTRAINT "interesse_prestadorId_fkey" FOREIGN KEY ("prestadorId") REFERENCES "usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "avaliacao" ADD CONSTRAINT "avaliacao_clienteId_fkey" FOREIGN KEY ("clienteId") REFERENCES "usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -240,13 +269,13 @@ ALTER TABLE "Commentario" ADD CONSTRAINT "Commentario_usuarioId_fkey" FOREIGN KE
 ALTER TABLE "carteira" ADD CONSTRAINT "carteira_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "transacao" ADD CONSTRAINT "transacao_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "transacao" ADD CONSTRAINT "transacao_carteiraId_fkey" FOREIGN KEY ("carteiraId") REFERENCES "carteira"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "transacao" ADD CONSTRAINT "transacao_pacoteId_fkey" FOREIGN KEY ("pacoteId") REFERENCES "pacotes"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "transacao" ADD CONSTRAINT "transacao_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "historico" ADD CONSTRAINT "historico_carteiraId_fkey" FOREIGN KEY ("carteiraId") REFERENCES "carteira"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -262,6 +291,18 @@ ALTER TABLE "notificacao" ADD CONSTRAINT "notificacao_authrId_fkey" FOREIGN KEY 
 
 -- AddForeignKey
 ALTER TABLE "postsvitrine" ADD CONSTRAINT "postsvitrine_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "likes" ADD CONSTRAINT "likes_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "usuario"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "likes" ADD CONSTRAINT "likes_postId_fkey" FOREIGN KEY ("postId") REFERENCES "postsvitrine"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "comments" ADD CONSTRAINT "comments_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "usuario"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "comments" ADD CONSTRAINT "comments_postId_fkey" FOREIGN KEY ("postId") REFERENCES "postsvitrine"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "profissao" ADD CONSTRAINT "profissao_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "category"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

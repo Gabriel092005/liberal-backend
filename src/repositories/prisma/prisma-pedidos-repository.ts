@@ -1,9 +1,48 @@
 import { Prisma, Pedido } from "@prisma/client";
-import { OrderRepository } from "../pedidos-repository";
+import { OrderRepository, PedidoPendenteInfo } from "../pedidos-repository";
 import { prisma } from "@/lib/prisma";
 import { sendNotification } from "@/lib/notification";
 
 export class PrismaOrderRepository implements OrderRepository {
+  async getPedidosStatus(usuarioId: number){
+    const pedidos = await prisma.pedido.findMany({
+      where: {
+        usuarioId,
+        status: 'PENDING',
+      },
+      include: {
+        interessados: {
+          where: { status: 'PENDING' },
+          include: {
+            prestador: {
+              select: { nome: true, image_path: true }
+            }
+          }
+        }
+      }
+    });
+
+    const pedidosFormatados: PedidoPendenteInfo[] = pedidos.map(p => ({
+      id: p.id,
+      titulo: p.title,
+      totalInteressados: p.interessados.length,
+      statusPedido: p.status,
+      mensagem: p.interessados.length > 0 
+        ? `Encontrámos ${p.interessados.length} profissionais para o seu pedido!`
+        : `Estamos procurando prestadores para o pedido de ${p.title}...`,
+      prestadoresEncontrados: p.interessados.map(i => ({
+        id:i.prestadorId,
+        nome: i.prestador.nome,
+        foto: i.prestador.image_path
+      }))
+    }));
+
+    return {
+      quantidadeTotal: pedidosFormatados.length,
+      pedidos: pedidosFormatados
+    };
+  }
+
   async findAllOrders(query:string|undefined){
       const orders = await prisma.pedido.findMany({
         where:{

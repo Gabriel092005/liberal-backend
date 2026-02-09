@@ -1,2 +1,0 @@
--- AlterEnum
-ALTER TYPE "public"."STATUS" ADD VALUE 'CONFIRMED';

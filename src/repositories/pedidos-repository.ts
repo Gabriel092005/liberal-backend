@@ -1,6 +1,8 @@
 
 import { Brevidade, Pedido, Prisma, STATUS, Usuario }  from "@prisma/client";
 
+
+
 // supondo que seus enums estão aqui
 
 // Tipo do autor do pedido
@@ -31,10 +33,31 @@ interface interessados{
     pedidoId: number;
 }
 
+export interface PrestadorInfo {
+  id:number
+  nome: string;
+  foto: string | null;
+}
+
+export interface PedidoPendenteInfo {
+  id: number;
+  titulo: string;
+  totalInteressados: number;
+  mensagem: string;
+  statusPedido: STATUS;
+  prestadoresEncontrados: PrestadorInfo[];
+}
+
+export interface RespostaPedidosPendentes {
+  quantidadeTotal: number;
+  pedidos: PedidoPendenteInfo[];
+}
+
 export interface OrderRepository {
     delete(id:number):Promise<null>
     fecharPedido(authorId:number, pedidoId:number):Promise<null>
     AcceptedOrder(costumerId:number,orderId:number ):Promise<null>
+    getPedidosStatus(usuarioId: number): Promise<RespostaPedidosPendentes>;
     RevokeOrder(costumerId:number,orderId:number):Promise<null>
     findAnOrderInterested(pedidoId:number):Promise<interessados[]|undefined>
     concluirPedidoPrestador(prestadorId:number, orderId:number) : Promise<number>

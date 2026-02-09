@@ -32,7 +32,7 @@ export class InterromperPedidoUseCase {
          await this.ordersRepository.RevokeOrder(prestadorId, pedidoId)
          
         const prestador = await this.usersRepository.findById(prestadorId);
-        const content = `O cliente ${client.nome} cancelou o pedido`;
+        const content = `O cliente ${client.nome} não aceitou a negociação.Aguarde outros clientes disponíveis`;
         const contentAdmin = `O cliente ${client.nome} cancelou o pedido com o ${prestador?.nome}`;
         const admin = await this.usersRepository.findAdminProfile()
 

@@ -2,7 +2,7 @@
 import { VitrineRepository } from "../virine-repository";
 import { prisma } from "@/lib/prisma";
 
-export class PrismaPostsVirineRepository implements VitrineRepository{
+export class PrismaPostsVirineRepository implements VitrineRepository {
     async findLike(usuarioId: number, postId: number) {
         return await prisma.like.findUnique({
           where: {
