@@ -1,100 +1,87 @@
 import { prisma } from "@/lib/prisma";
-import {  CarteiraRepoitory } from "../carteira-repository";
+import { CarteiraComUsuario, CarteiraRepoitory } from "../carteira-repository"; // Corrigido o typo de Repoitory se necessário
 import { Decimal } from "@prisma/client/runtime/library";
-import { HistoricoRecargas, Pacotes } from "@prisma/client";
+import { HistoricoRecargas, Pacotes, Carteira, Transacao } from "@prisma/client";
+
 
 export class PrismaCarteira implements CarteiraRepoitory {
-   async findAllPackagesHistory(
-    carteiraId: number
-  ): Promise<(HistoricoRecargas & { pacote: Pacotes })[]> {
-    return prisma.historicoRecargas.findMany({
-      where: {
-        carteiraId,
-      },
-      include: {
-        pacote: true,
-      },
-      orderBy: {
-        created_at: "desc",
-      },
-    });
-  }
-
   
-async deleteExpiredPackages(userId: number): Promise<void> {
-  const agora = new Date();
-
-  // 1️⃣ Buscar a carteira do usuário
-  const carteira = await prisma.carteira.findFirst({
-    where: { usuarioId: userId },
-  });
-
-  if (!carteira) {
-    console.log("❌ Nenhuma carteira encontrada para este usuário.");
-    return;
-  }
-
-  // 2️⃣ Buscar pacotes não expirados com validade vencida
-  const pacotesExpirados = await prisma.historicoRecargas.findMany({
-    where: {
-      carteiraId: carteira.id,
-      isExpired: false,
-      expires_at: { lt: agora }, // 👈 aqui compara a data
+  // Busca o histórico completo com o pacote relacionado
+// No arquivo de implementação (PrismaHistoricoRepository)
+async findAllPackagesHistory(carteiraId: number): Promise<(HistoricoRecargas & { 
+  pacote: Pacotes; 
+  transacao: Transacao | null 
+})[]> {
+  return prisma.historicoRecargas.findMany({
+    where: { carteiraId: Number(carteiraId) },
+    include: { 
+      pacote: true, 
+      transacao: true // Isso agora bate com o Promise acima
     },
+    orderBy: { created_at: "desc" },
   });
-
-  console.log(`Pacotes vencidos encontrados: ${pacotesExpirados.length}`);
-
-  if (pacotesExpirados.length === 0) {
-    console.log("Nenhum pacote expirado encontrado.");
-    return;
-  }
-
-  // 3️⃣ Atualizar todos os pacotes vencidos
-  await prisma.historicoRecargas.updateMany({
-    where: {
-      id: { in: pacotesExpirados.map((p) => p.id) },
-    },
-    data: {
-      isExpired: true,
-    },
-  });
-
-  console.log("✅ Pacotes expirados atualizados com sucesso!");
 }
+  // REGRA 2: Lógica de expiração
+  async deleteExpiredPackages(userId: number): Promise<void> {
+    const agora = new Date();
+    const carteira = await this.findByUserId(userId);
 
+    if (!carteira) return;
 
-
-   async findByUserId(userId: number) {
-    const carteira = await prisma.carteira.findFirst({
-      where: { usuarioId:Number(userId) },
-    })
-    return carteira
-  }
-  async FindDigitalCardDates(userId: number) {
-    const carteira = await prisma.carteira.findFirst({
-      where: { usuarioId: userId},
-      include: {
-        usuario: { select: { nome: true } },
+    // Busca pacotes que venceram mas ainda não foram marcados como expirados
+    const pacotesExpirados = await prisma.historicoRecargas.findMany({
+      where: {
+        carteiraId: carteira.id,
+        isExpired: false,
+        expires_at: { lt: agora },
       },
     });
 
-    return carteira;
+    if (pacotesExpirados.length > 0) {
+      await prisma.historicoRecargas.updateMany({
+        where: { id: { in: pacotesExpirados.map((p) => p.id) } },
+        data: { isExpired: true },
+      });
+    }
   }
 
+  async findByUserId(userId: number): Promise<Carteira | null> {
+    return prisma.carteira.findFirst({
+      where: { usuarioId: Number(userId) },
+    });
+  }
+
+  // Retorna os dados para o cartão digital (incluindo a validade)
+  // Adicione o retorno explícito : Promise<CarteiraComUsuario | null>
+async FindDigitalCardDates(userId: number): Promise<CarteiraComUsuario | null> {
+  const carteira = await prisma.carteira.findFirst({
+    where: { usuarioId: Number(userId) },
+    include: {
+      usuario: { 
+        select: { nome: true } 
+      },
+    },
+  });
+
+  // O 'as any' ou 'as CarteiraComUsuario' resolve o conflito de tipos do Prisma
+  return carteira as CarteiraComUsuario | null;
+}
+  // Apenas saldo (usado para a REGRA 1 - Desconto no Unlock)
   async updateSaldo(carteiraId: number, novoSaldo: Decimal) {
-
-   const carteira = await prisma.carteira.update({
-    where: { id: Number(carteiraId) },
-    data: { receita: novoSaldo ,  },
-  })
-  
-
-
-  
-
-  return carteira
+    return prisma.carteira.update({
+      where: { id: Number(carteiraId) },
+      data: { receita: novoSaldo },
+    });
   }
 
-  
+  // REGRA 2, 3 e 4: Atualiza Saldo e a data de expiração da carteira
+  async updateSaldoEValidade(carteiraId: number, novoSaldo: Decimal, novaData: Date) {
+    return prisma.carteira.update({
+      where: { id: Number(carteiraId) },
+      data: { 
+        receita: novoSaldo,
+        expiraEm: novaData // Certifique-se que este campo existe no seu schema.prisma
+      },
+    });
+  }
 }

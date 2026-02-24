@@ -111,7 +111,7 @@ model Carteira {
   id         Int                 @id @default(autoincrement())
   receita    Decimal             @default(0)
   created_at DateTime            @default(now())
-  validade   String?
+  expiraEm     DateTime? // 👈 Este campo não pode faltar
   usuarioId  Int                 @unique
   usuario    Usuario             @relation(fields: [usuarioId], references: [id])
   historico  HistoricoRecargas[]
@@ -127,7 +127,7 @@ model Transacao {
   carteiraId    Int
   valor         Decimal
   metodo        String
-  status        String
+  status        TransactionStatus @default(PENDENTE) // Começa sempre pendente
   referencia    String?
   created_at    DateTime            @default(now())
   atualizado_em DateTime            @updatedAt
@@ -167,9 +167,9 @@ model Pacotes {
   created_at DateTime            @default(now())
   historico  HistoricoRecargas[]
   transacoes Transacao[]
-
   @@map("pacotes")
 }
+
 
 model Notificacao {
   id          Int      @id @default(autoincrement())
@@ -262,6 +262,11 @@ model category {
   profissao  profissao[]
 }
 
+enum TransactionStatus {
+  PENDENTE
+  APROVADO
+  REJEITADO
+}
 enum COSTUMER_TYPES {
   COMPANY
   INDIVIDUAL

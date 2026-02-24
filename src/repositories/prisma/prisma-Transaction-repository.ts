@@ -29,7 +29,6 @@ export class PrismaTransacaoRepository implements transacaoRepository  {
         pacoteId,
         valor,
         metodo,
-        status,
         referencia,
       },
     });

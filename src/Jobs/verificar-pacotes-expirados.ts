@@ -6,11 +6,8 @@ import { io } from "@/server";
 
 const carteiraRepository = new PrismaCarteira();
 
-/**
- * 🔁 Verifica pacotes expirados e executa as ações de expiração em tempo real
- */
 export function iniciarVerificacaoPacotesExpirados() {
-  // Executa a cada 1 minuto (teste). Em produção: "0 * * * *" → a cada 1h
+
   cron.schedule("*/1 * * * *", async () => {
     console.log("🕛 Iniciando verificação de pacotes expirados...");
 
@@ -29,7 +26,7 @@ export function iniciarVerificacaoPacotesExpirados() {
         },
       });
 
-      console.log(historicosExpirados)
+      console.log('epirados:',historicosExpirados)
 
       if (historicosExpirados.length === 0) {
         console.log("✅ Nenhum pacote expirado encontrado.");
@@ -66,7 +63,7 @@ export function iniciarVerificacaoPacotesExpirados() {
               pacoteId: pacote.id,
               valor: pacote.preco,
               metodo: "AUTOMATIC_DEBIT",
-              status: "COMPLETED",
+              status: "APROVADO",
               referencia: `EXP-${Date.now()}`,
             },
           });

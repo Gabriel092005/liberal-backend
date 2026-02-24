@@ -7,6 +7,7 @@ export async function listarHistoricoPacotesController(req: FastifyRequest, repl
     const usuarioId = req.user.sub // extraído do token JWT
 
     const listarHistoricoPacotesUseCase = makeListarHistoricoPacotesUseCase();
+    
     const historico = await listarHistoricoPacotesUseCase.execute({ usuarioId });
 
     return reply.status(200).send({

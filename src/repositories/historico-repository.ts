@@ -13,5 +13,6 @@ export interface createHistoricoTypes {
 
 export interface historicoRepository {
      create(data:createHistoricoTypes):Promise<HistoricoRecargas>
+     findLastActive(carteiraId: number): Promise<HistoricoRecargas | null>;
      findRecarga(recargaId:number):Promise<HistoricoRecargas>
 }

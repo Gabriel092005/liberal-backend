@@ -18,12 +18,27 @@ async findRecarga(recargaId: number): Promise<HistoricoRecargas> {
   if (!recarga) {
     throw new Error("Recarga não encontrada");
   }
+
+
   
   
 
   return recarga;
 }
 
+async findLastActive(carteiraId: number) {
+    const ultimoHistorico = await prisma.historicoRecargas.findFirst({
+      where: {
+        carteiraId: Number(carteiraId),
+        catergoy: "INCOME", // Filtramos por entradas de pacotes
+      },
+      orderBy: {
+        expires_at: 'desc', // Pegamos o que expira mais tarde
+      },
+    });
+
+    return ultimoHistorico;
+  }
  async findByCarteiraId(carteiraId: number|undefined): Promise<HistoricoRecargas[]> {
     const historico = await prisma.historicoRecargas.findMany({
       where: { carteiraId },

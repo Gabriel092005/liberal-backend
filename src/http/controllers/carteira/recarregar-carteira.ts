@@ -9,16 +9,17 @@ export async function RecarregarCarteira(req:FastifyRequest,reply:FastifyReply){
          pacoteId:z.number(),
          metodo:z.string(),
     })
-    console.log(req.body)
-
+    
     const {metodo,pacoteId} = RecarregarCarteiraRequestBody.parse(req.body)
     const  usuarioId = req.user.sub
     try {
          const recarga = await makeRecarregarCarteira().execute({
-            metodo,
-            pacoteId,
-            usuarioId:Number(usuarioId)
-         })
+              metodo,
+              pacoteId,
+              usuarioId:Number(usuarioId)
+          })
+          
+          console.log(req.body)
 
          return reply.status(200).send(recarga);
          

@@ -29,6 +29,7 @@ import { categoryRoutes } from "./http/controllers/category/routes";
 import fs from 'node:fs';
 import multer from "multer";
 import { env } from "./Env";
+import { Pagamentos } from "./http/controllers/payments/routes";
 
 
 const app = Fastify({
@@ -209,6 +210,7 @@ app.register(ProfissionRoutes);
 app.register(NotificacaoRoutes);
 app.register(VitrineRoutes);
 app.register(categoryRoutes);
+app.register(Pagamentos)
 
 
 
