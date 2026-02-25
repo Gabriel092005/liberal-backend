@@ -478,7 +478,7 @@ await prisma.usuario.delete({
       carteira: {
         create: {
           receita: 0,       // saldo inicial
-          validade: null,   // opcional
+          expiraEm: null,   // opcional
         },
       },
     },
