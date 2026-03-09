@@ -1,87 +1,94 @@
 import prisma from "@/lib/prisma";
-import { Decimal } from "@prisma/client/runtime/library";
 import { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import { RechargeRuleFactory } from "./rechargeFactory";
+import { RechargeContext } from "./rechargeRuler";
+
+
 
 export async function aprovarPagamento(req: FastifyRequest, res: FastifyReply) {
-  
   const schema = z.object({ transacaoId: z.coerce.number() });
   const { transacaoId } = schema.parse(req.body);
 
-  // 1. Buscar transação com o pacote incluído
+  // ── 1. Buscar transação + pacote ────────────────────────────────────────────
   const transacao = await prisma.transacao.findUnique({
     where: { id: transacaoId },
-    include: { pacote: true }
+    include: { pacote: true },
   });
 
-  if (!transacao) return res.status(404).send("Transação não encontrada");
+  if (!transacao)          return res.status(404).send("Transação não encontrada");
   if (transacao.status !== "PENDENTE") return res.status(400).send("Já processada");
+  if (!transacao.pacote)   return res.status(400).send("Pacote não encontrado");
 
-  // 2. Buscar carteira atual
+  // ── 2. Buscar carteira ──────────────────────────────────────────────────────
   const carteira = await prisma.carteira.findUnique({
-    where: { id: transacao.carteiraId }
+    where: { id: transacao.carteiraId },
   });
 
   if (!carteira) return res.status(404).send("Carteira não encontrada");
 
   const agora = new Date();
   const plano = transacao.pacote;
-  const validadeAtual = carteira.expiraEm ? new Date(carteira.expiraEm) : null;
-  const planoExpirado = !validadeAtual || validadeAtual < agora;
 
-  let novasMoedas: number;
-  let novaValidade: Date;
+  // ── 3. Escolher regra via Factory ───────────────────────────────────────────
+  const ctx: RechargeContext = {
+    currentCoins : Number(carteira.receita),
+    currentExpiry: carteira.expiraEm ? new Date(carteira.expiraEm) : null,
+    planCoins    : Number(plano.preco),
+    planDays     : Number(plano.validade),
+    now          : agora,
+  };
 
-  if (planoExpirado) {
-    // 🔹 REGRA 2 – Expirou: recebe só as moedas do novo plano e novo prazo
- novasMoedas =  Number(plano?.preco ?? 0);
-novaValidade = new Date(agora);
-novaValidade.setDate(novaValidade.getDate() + Number(plano?.validade ?? 0));
-  } else {
-    // 🔹 REGRA 3 & 4 – Ainda válido: soma moedas e soma prazos
-    const msRestantes = validadeAtual!.getTime() - agora.getTime();
-    const diasRestantes = Math.ceil(msRestantes / (1000 * 60 * 60 * 24));
+  const rule = RechargeRuleFactory.create(ctx);
+  const { novasMoedas, novaValidade, regraaplicada } = rule.apply(ctx);
 
-novasMoedas = Number(carteira.receita) + Number(plano?.preco);
-  novaValidade = new Date(agora);
-novaValidade.setDate(novaValidade.getDate() + diasRestantes + Number(plano?.validade));
-  }
+  console.log(`[aprovarPagamento] Regra: ${regraaplicada}`);
+  console.log(`[aprovarPagamento] Moedas: ${ctx.currentCoins} → ${novasMoedas}`);
+  console.log(`[aprovarPagamento] Validade: ${novaValidade.toISOString()}`);
 
-  // 3. Transação atômica
+  // ── 4. Transação atómica ────────────────────────────────────────────────────
   await prisma.$transaction([
-    // Atualiza status da transação
+
+    // Marca transação como aprovada
     prisma.transacao.update({
       where: { id: transacao.id },
-      data: { status: "APROVADO" }
+      data : { status: "APROVADO" },
     }),
 
-    // Atualiza carteira com moedas + validade + receita
+    // Actualiza carteira — SET (não increment)
     prisma.carteira.update({
       where: { id: carteira.id },
-      data: {
+      data : {
+        receita : novasMoedas,
         expiraEm: novaValidade,
-        receita: { increment: transacao.valor }
-      }
+      },
     }),
 
-    // Histórico de recarga
+    // Regista no histórico com expires_at preenchido
     prisma.historicoRecargas.create({
       data: {
-        valor: transacao.valor,
-        pacoteId: Number(transacao.pacoteId),
-        carteiraId: transacao.carteiraId,
-        transacaoId: transacao.id
-      }
+        valor      : transacao.valor,
+        pacoteId   : Number(transacao.pacoteId),
+        carteiraId : transacao.carteiraId,
+        transacaoId: transacao.id,
+        expires_at : novaValidade,  // ← essencial para o ExpirationService
+        isExpired  : false,
+      },
     }),
 
     // Notifica o prestador
     prisma.notificacao.create({
       data: {
-        content: `Pagamento aprovado! Recebeu ${plano?.preco} moedas. Validade até ${novaValidade.toLocaleDateString("pt-PT")}.`,
-        authrId: transacao.usuarioId
-      }
-    })
+        content: `Pagamento aprovado! Tens ${novasMoedas} moedas. Válido até ${novaValidade.toLocaleDateString("pt-PT")}.`,
+        authrId: transacao.usuarioId,
+      },
+    }),
   ]);
 
-  return res.send({ message: "Pagamento aprovado!", moedas: novasMoedas, validade: novaValidade });
+  return res.send({
+    message      : "Pagamento aprovado!",
+    regraaplicada,
+    moedas       : novasMoedas,
+    validade     : novaValidade,
+  });
 }

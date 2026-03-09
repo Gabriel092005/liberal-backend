@@ -26,7 +26,7 @@ export function iniciarVerificacaoPacotesExpirados() {
         },
       });
 
-      console.log('epirados:',historicosExpirados)
+
 
       if (historicosExpirados.length === 0) {
         console.log("✅ Nenhum pacote expirado encontrado.");

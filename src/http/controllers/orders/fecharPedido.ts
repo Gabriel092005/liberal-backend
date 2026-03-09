@@ -10,7 +10,7 @@ export async function FecharPedido(req: FastifyRequest, reply: FastifyReply) {
     prestadorId:z.coerce.number()
   });
 
-  console.log(req.body)
+
 
   const clientId = req.user.sub;
 

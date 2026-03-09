@@ -10,7 +10,7 @@ export class GetHistoricoRecargasUseCase {
   ) {}
 
   async execute({ carteiraId }: GetHistoricoRecargasRequest) {
-      const historico = await this.historicoRepository.findByCarteiraId(carteiraId)
+
     if (carteiraId) {
       return this.historicoRepository.findManyByCarteira(carteiraId);
 

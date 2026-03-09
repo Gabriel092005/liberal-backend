@@ -3,11 +3,6 @@ import { prisma } from "@/lib/prisma";
 
 export async function main() {
 
-
-
-  // ... (seu código de categorias e profissões aqui)
-
-  // 1. Criar Usuário Admin Padrão
   const id = 1000;
   const passwordHash = ("Admin123!");
 
@@ -22,7 +17,7 @@ export async function main() {
         palavraPasse: passwordHash,
         celular: "999999999",
         nif: "000000000",
-        role: "ADMIN", // Ou isAdmin: true, dependendo do seu schema
+        role: "ADMIN", 
         municipio:'iana',
         profissao:'iana',
         provincia:'iana',

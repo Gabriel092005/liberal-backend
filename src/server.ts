@@ -30,6 +30,7 @@ import fs from 'node:fs';
 import multer from "multer";
 import { env } from "./Env";
 import { Pagamentos } from "./http/controllers/payments/routes";
+import { expirationService } from "./http/controllers/payments/expirationService";
 
 
 const app = Fastify({
@@ -135,7 +136,7 @@ let io: Server;
 const start = async () => {
   try {
     await seedDefaults();
-    iniciarVerificacaoPacotesExpirados();
+    // iniciarVerificacaoPacotesExpirados();
 
 
 
@@ -211,6 +212,20 @@ app.register(NotificacaoRoutes);
 app.register(VitrineRoutes);
 app.register(categoryRoutes);
 app.register(Pagamentos)
+
+app.post("/admin/debug/forcar-expiracao", async (req, res) => {
+  await expirationService["runCheck"]();
+  return res.send({ ok: true, mensagem: "ExpirationService executado!" });
+});
+
+
+app.addHook("onReady", async () => {
+  expirationService.start();
+});
+
+app.addHook("onClose", async () => {
+  expirationService.stop();
+})
 
 
 
